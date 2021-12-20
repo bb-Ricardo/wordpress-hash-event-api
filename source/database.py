@@ -1,0 +1,93 @@
+from typing import Dict, List
+import mysql.connector
+from common.logging import get_logger
+
+log = get_logger()
+
+db_setting_attributes = {
+    "db_username": None,
+    "db_password": None,
+    "db_name": None,
+    "db_host": None
+}
+
+conn = None
+
+class DBConnection():
+
+    session = None
+
+    def __init__(self, host_name: str, user_name: str, user_password: str, db_name: str) -> None:
+        if self.session is None:
+            self.create_connection(host=host_name, user=user_name, password=user_password, database=db_name)
+
+    def create_connection(self, **kwargs):
+        try:
+            self.session = mysql.connector.connect(**kwargs)
+        except mysql.connector.Error as e:
+            log.error(f"DB error occured: {e}")
+            return
+
+        # disable caching
+        self.session.autocommit = True
+
+    def execute_read_query(self, query):
+        log.debug(f"Performing DB query: {query}")
+        cursor = self.session.cursor(dictionary=True)
+        try:
+            cursor.execute(query)
+            return cursor.fetchall()
+        except mysql.connector.Error as e:
+            log.error(f"DB error occured: {e}")
+
+    def get_posts(self, id: int = None) -> List[Dict]:
+        query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, wp_t.name as post_category " \
+                "FROM wp_posts as p " \
+                "LEFT JOIN wp_term_relationships as t ON p.id = t.object_id " \
+                "LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id " \
+                "WHERE p.post_type = 'event_listing'" 
+        if id is not None:
+                query += f" AND p.id = {id}"
+        return self.execute_read_query(query)
+        
+    def get_posts_meta(self, id: int = None) -> List[Dict]:
+        query = "SELECT * FROM `wp_postmeta`"
+        if id is not None:
+                query += f" WHERE post_id = {id}"
+        return self.execute_read_query(query)
+
+    def get_users(self, id: int = None) -> List[Dict]:
+        return self.execute_read_query("SELECT id, display_name FROM `wp_users`")
+
+    def get_config(self, item: str = None):
+        query = "SELECT * from `wp_options`"
+        if item is not None:
+            query += f" WHERE `option_name` = '{item}'"
+        return self.execute_read_query(query)
+    
+    def get_config_item(self, item: str = None):
+        if item is None:
+            log.error("Requested config item name must be a string.")
+            return
+
+        result = self.get_config(item)
+        return_value = None
+        if len(result) > 0:
+            return_value = result[0].get("option_value")
+
+        return return_value
+
+    def close(self):
+        if self.session is not None:
+            self.session.close()
+
+def get_db_handler() -> DBConnection:
+    global conn
+    return conn
+
+def setup_db_handler(host_name: str, user_name: str, user_password: str, db_name: str) -> DBConnection:
+    global conn
+    conn = DBConnection(host_name=host_name, user_name=user_name, user_password=user_password, db_name=db_name)
+    return conn
+
+# EOF
