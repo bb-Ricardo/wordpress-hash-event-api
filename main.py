@@ -9,6 +9,8 @@ import common.config as config
 from common.logging import setup_logging
 from routers import runs
 from source.database import db_setting_attributes
+from logging.config import dictConfig
+from config.log import request_logger_config
 
 settings_file = "config.ini"
 default_log_level = "INFO"
@@ -48,6 +50,10 @@ def get_app() -> FastAPI:
 
     if log_level == "DEBUG":
         api_settings.debug = True
+
+    # configure request logger
+    request_logger_config["loggers"]["uvicorn.access"]["level"] = log_level
+    dictConfig(request_logger_config)
 
     db_settings = config.get_config(config_handler, section="database", valid_settings=db_setting_attributes)
 
@@ -97,11 +103,13 @@ def get_app() -> FastAPI:
     def redirect_to_docs() -> RedirectResponse:
         return RedirectResponse(f"{api_settings.root_path}/docs")
 
+    @server.get("/status", include_in_schema=False)
+    def status():
+        return {"status": "ok"}
+
     # close DB connection on shutdown
     @server.on_event("shutdown")
     async def shutdown():
-        global log
-        log.info("Closing Databse connection")
         if conn is not None:
             conn.close()
 

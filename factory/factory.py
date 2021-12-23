@@ -58,7 +58,7 @@ def get_hash_runs(id: int = None):
 
     return_list = list()
     single_run = None
-    for post in posts:
+    for post in posts or list():
 
         post_attr = {x.get("meta_key"): x.get("meta_value") for x in 
                         [d for d in post_meta 

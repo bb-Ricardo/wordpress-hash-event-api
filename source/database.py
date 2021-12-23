@@ -16,25 +16,46 @@ conn = None
 class DBConnection():
 
     session = None
+    host = None
+    user = None
+    password = None
+    database = None
 
     def __init__(self, host_name: str, user_name: str, user_password: str, db_name: str) -> None:
-        if self.session is None:
-            self.create_connection(host=host_name, user=user_name, password=user_password, database=db_name)
+        self.host = host_name
+        self.user = user_name
+        self.password = user_password
+        self.database = db_name
 
-    def create_connection(self, **kwargs):
+        if self.session is None:
+            self.init_session()
+
+    def init_session(self):
+        log.debug("Intiating DB session")
         try:
-            self.session = mysql.connector.connect(**kwargs)
+            self.session = mysql.connector.connect(
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                database=self.database
+            )
         except mysql.connector.Error as e:
             log.error(f"DB error occured: {e}")
             return
 
+        log.debug("Succsessfully initiated DB connection")
+
         # disable caching
         self.session.autocommit = True
 
-    def execute_read_query(self, query):
+    def execute_query(self, query):
         log.debug(f"Performing DB query: {query}")
-        cursor = self.session.cursor(dictionary=True)
+
+        if self.session is None or self.session.is_connected() is not True:
+            self.init_session()
+
         try:
+            cursor = self.session.cursor(dictionary=True)
             cursor.execute(query)
             return cursor.fetchall()
         except mysql.connector.Error as e:
@@ -45,32 +66,32 @@ class DBConnection():
                 "FROM wp_posts as p " \
                 "LEFT JOIN wp_term_relationships as t ON p.id = t.object_id " \
                 "LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id " \
-                "WHERE p.post_type = 'event_listing'" 
+                "WHERE p.post_type = 'event_listing'"
         if id is not None:
                 query += f" AND p.id = {id}"
-        return self.execute_read_query(query)
-        
+        return self.execute_query(query)
+
     def get_posts_meta(self, id: int = None) -> List[Dict]:
         query = "SELECT * FROM `wp_postmeta`"
         if id is not None:
                 query += f" WHERE post_id = {id}"
-        return self.execute_read_query(query)
+        return self.execute_query(query)
 
     def get_users(self, id: int = None) -> List[Dict]:
-        return self.execute_read_query("SELECT id, display_name FROM `wp_users`")
+        return self.execute_query("SELECT id, display_name FROM `wp_users`")
 
     def get_config(self, item: str = None):
         query = "SELECT * from `wp_options`"
         if item is not None:
             query += f" WHERE `option_name` = '{item}'"
-        return self.execute_read_query(query)
-    
+        return self.execute_query(query)
+
     def get_config_item(self, item: str = None):
         if item is None:
-            log.error("Requested config item name must be a string.")
+            log.error("get_config_item() Requested config item name must be a string.")
             return
 
-        result = self.get_config(item)
+        result = self.get_config(item) or list()
         return_value = None
         if len(result) > 0:
             return_value = result[0].get("option_value")
@@ -78,6 +99,7 @@ class DBConnection():
         return return_value
 
     def close(self):
+        log.debug("Closing DB session")
         if self.session is not None:
             self.session.close()
 
