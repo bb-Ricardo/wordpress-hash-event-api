@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#
+#  wordpress-hash-event-api
+#
+#  This work is licensed under the terms of the MIT license.
+#  For a copy, see file LICENSE.txt included in this
+#  repository or visit: <https://opensource.org/licenses/MIT>.
+
 from typing import Dict, List
 import mysql.connector
 from common.logging import get_logger
@@ -12,6 +21,7 @@ db_setting_attributes = {
 }
 
 conn = None
+
 
 class DBConnection():
 
@@ -43,7 +53,7 @@ class DBConnection():
             log.error(f"DB error occured: {e}")
             return
 
-        log.debug("Succsessfully initiated DB connection")
+        log.debug("Successfully initiated DB connection")
 
         # disable caching
         self.session.autocommit = True
@@ -61,24 +71,30 @@ class DBConnection():
         except mysql.connector.Error as e:
             log.error(f"DB error occured: {e}")
 
-    def get_posts(self, id: int = None) -> List[Dict]:
-        query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, wp_t.name as post_category " \
+    def get_posts(self, post_id: int = None) -> List[Dict]:
+        query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, " \
+                "wp_t.name as post_category " \
                 "FROM wp_posts as p " \
                 "LEFT JOIN wp_term_relationships as t ON p.id = t.object_id " \
                 "LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id " \
                 "WHERE p.post_type = 'event_listing'"
-        if id is not None:
-                query += f" AND p.id = {id}"
+        if post_id is not None:
+            query += f" AND p.id = {post_id}"
         return self.execute_query(query)
 
-    def get_posts_meta(self, id: int = None) -> List[Dict]:
+    def get_posts_meta(self, post_id: int = None) -> List[Dict]:
         query = "SELECT * FROM `wp_postmeta`"
-        if id is not None:
-                query += f" WHERE post_id = {id}"
+        if post_id is not None:
+            query += f" WHERE post_id = {post_id}"
+
         return self.execute_query(query)
 
-    def get_users(self, id: int = None) -> List[Dict]:
-        return self.execute_query("SELECT id, display_name FROM `wp_users`")
+    def get_users(self, user_id: int = None) -> List[Dict]:
+        query = "SELECT id, display_name FROM `wp_users`"
+        if user_id is not None:
+            query += f" WHERE id = {user_id}"
+
+        return self.execute_query(query)
 
     def get_config(self, item: str = None):
         query = "SELECT * from `wp_options`"
@@ -103,9 +119,11 @@ class DBConnection():
         if self.session is not None:
             self.session.close()
 
+
 def get_db_handler() -> DBConnection:
     global conn
     return conn
+
 
 def setup_db_handler(host_name: str, user_name: str, user_password: str, db_name: str) -> DBConnection:
     global conn

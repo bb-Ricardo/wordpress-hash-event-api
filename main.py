@@ -1,10 +1,16 @@
 #!/usr/bin/env python3.9
+#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#
+#  wordpress-hash-event-api
+#
+#  This work is licensed under the terms of the MIT license.
+#  For a copy, see file LICENSE.txt included in this
+#  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 from pydantic import BaseSettings, ValidationError
 from source.database import setup_db_handler
-#from common.config import get_config_file, open_config_file, get_config, main_config_values
 import common.config as config
 from common.logging import setup_logging
 from routers import runs
@@ -15,6 +21,7 @@ from config.log import request_logger_config
 settings_file = "config.ini"
 default_log_level = "INFO"
 log = None
+
 
 class APISettings(BaseSettings):
     description='Hash Run API for wordpress Event Manager'

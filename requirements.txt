@@ -1,0 +1,7 @@
+starlette
+fastapi
+pydantic
+uvicorn
+pytz
+phpserialize
+mysql-connector

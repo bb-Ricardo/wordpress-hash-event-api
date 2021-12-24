@@ -1,3 +1,5 @@
 .env
 config.ini
 __pycache__
+.idea
+.DS_Store

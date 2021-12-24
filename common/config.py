@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2020 - 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
 #
-#  netbox-sync.py
+#  wordpress-hash-event-api
 #
 #  This work is licensed under the terms of the MIT license.
 #  For a copy, see file LICENSE.txt included in this
