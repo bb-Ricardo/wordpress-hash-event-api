@@ -9,13 +9,11 @@
 
 import configparser
 import os
-from typing import Optional
 
-from pydantic import BaseModel, validator, ValidationError
+from pydantic import BaseModel, validator
 import pytz
 
-from source.database import conn
-from common.logging import get_logger
+from common.log import get_logger
 
 
 log = get_logger()
@@ -26,23 +24,26 @@ main_config_values = {
     "api_root_path": None
 }
 
+
 class AppSettings(BaseModel):
     blogname: str = None
     default_kennel: str = None
     default_hash_cash: int = None
     timezone_string: str = None
     default_currency: str = None
-    dafault_facebook_group_id: int = None
+    default_facebook_group_id: int = None
 
     @validator("timezone_string")
     def check_time_zone_string(cls, value):
         if value is None:
             return
 
+        # noinspection PyBroadException
         try:
             return pytz.timezone(value)
-        except Exception as e:
+        except Exception:
             raise ValueError(f"Time zone unknown: {value}")
+
 
 app_settings = AppSettings()
 
@@ -96,7 +97,6 @@ def open_config_file(config_file):
         config_handler.read_file(open(config_file))
     except configparser.Error as e:
         raise Exception(f"ERROR: Problem while config file parsing: {e}")
-    # noinspection PyBroadException
     except Exception:
         raise Exception(f"ERROR: Unable to open file '{config_file}'")
 

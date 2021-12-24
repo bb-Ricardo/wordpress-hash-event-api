@@ -8,15 +8,18 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from datetime import datetime
-from source.database import get_db_handler
-from models.run import Hash
 import html
-from phpserialize import loads
-import common.config as config
+
 from pydantic import ValidationError
-from common.logging import get_logger
+from phpserialize import loads
+
+from models.run import Hash
+import common.config as config
+from common.log import get_logger
+from source.database import get_db_handler
 
 log = get_logger()
+
 
 def get_event_manager_field_data(event_manager_fields: dict, field_name: str, field_value: str = None):
 
@@ -31,6 +34,7 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
     if field_data is None:
         return field_value
 
+    # noinspection PyBroadException
     try:
         if field_data.get("type") in ["select", "radio"]:
             return field_data.get("options").get(field_value)
@@ -48,30 +52,33 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
 
     return None
 
+
 def php_deserialize(string: str):
 
-    try: 
+    # noinspection PyBroadException
+    try:
         return loads(string.encode('utf-8'), charset='utf-8', decode_strings=True)
     except Exception:
         pass
 
-def get_hash_runs(id: int = None):
+
+def get_hash_runs(run_id: int = None):
 
     conn = get_db_handler()
 
-    posts = conn.get_posts(id)
-    post_meta = conn.get_posts_meta(id)
+    posts = conn.get_posts(run_id)
+    post_meta = conn.get_posts_meta(run_id)
     event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_form_fields"))
 
     return_list = list()
     single_run = None
     for post in posts or list():
 
-        post_attr = {x.get("meta_key"): x.get("meta_value") for x in 
-                        [d for d in post_meta 
-                            if d.get("post_id") == post.get("id") and len(str(d.get("meta_value"))) != 0
-                        ]
-                    }
+        post_attr = {x.get("meta_key"): x.get("meta_value") for x in
+                     [d for d in post_meta
+                      if d.get("post_id") == post.get("id") and len(str(d.get("meta_value"))) != 0
+                      ]
+                     }
 
         # if start date is not set, ignore event
         if post_attr.get("_event_start_date") is None:
@@ -94,11 +101,10 @@ def get_hash_runs(id: int = None):
             "contact": post_attr.get("_contact"),
             "geo_lat": post_attr.get("geolocation_lat"),
             "geo_long": post_attr.get("geolocation_long"),
-            "geo_long": post_attr.get("geolocation_long"),
-            "geo_loncation_name": post_attr.get("geolocation_formatted_address"),
+            "geo_location_name": post_attr.get("geolocation_formatted_address"),
             "location_name": post_attr.get("_event_location"),
             "location_additional_info": post_attr.get("_location_specifics"),
-            "facebook_group_id": config.app_settings.dafault_facebook_group_id,
+            "facebook_group_id": config.app_settings.default_facebook_group_id,
             "hash_cash_members": config.app_settings.default_hash_cash,
             "hash_cash_non_members": config.app_settings.default_hash_cash,
             "event_currency": config.app_settings.default_currency,
@@ -106,7 +112,7 @@ def get_hash_runs(id: int = None):
             "extras_description": post_attr.get("_extras_description"),
         }
 
-        # only publisched and expired events count as not deleted
+        # only published and expired events count as not deleted
         if post.get("post_status") in ["publish", "expired"] and post_attr.get("_cancelled") == "0":
             hash_data["deleted"] = False
         else:
@@ -118,13 +124,15 @@ def get_hash_runs(id: int = None):
             hash_data["hash_cash_non_members"] = post_attr.get("_hash_cash")
 
         # get event url and unescape the link
+        # noinspection PyBroadException
         try:
             hash_data["event_url"] = html.unescape(post.get("guid"))
         except Exception:
             pass
 
         # get image url from php serializer
-        hash_data["image_url"] = get_event_manager_field_data(event_manager_form_fields, "_event_banner", post_attr.get("_event_banner"))
+        hash_data["image_url"] = get_event_manager_field_data(
+            event_manager_form_fields, "_event_banner", post_attr.get("_event_banner"))
 
         # get kennel name
         kennel_name = get_event_manager_field_data(event_manager_form_fields, "_kennel", post_attr.get("_kennel"))
@@ -132,12 +140,14 @@ def get_hash_runs(id: int = None):
             hash_data["kennel_name"] = kennel_name
 
         # get event geo scope
-        event_geographic_scope = get_event_manager_field_data(event_manager_form_fields, "_run_type", post_attr.get("_run_type"))
+        event_geographic_scope = get_event_manager_field_data(
+            event_manager_form_fields, "_run_type", post_attr.get("_run_type"))
         if event_geographic_scope is not None:
             hash_data["event_geographic_scope"] = event_geographic_scope
 
         # get event attributes
-        event_attributes = get_event_manager_field_data(event_manager_form_fields, "_attributes", post_attr.get("_attributes"))
+        event_attributes = get_event_manager_field_data(
+            event_manager_form_fields, "_attributes", post_attr.get("_attributes"))
         if event_attributes is not None and isinstance(event_attributes, list):
             hash_data["event_attributes"] = event_attributes
 
@@ -154,11 +164,11 @@ def get_hash_runs(id: int = None):
         except ValidationError as e:
             e = str(e).replace('\n', ":")
             log.error(f"Event (id: {post.get('id')}) parsing error: {e}")
-            #pprint.pprint(post_attr)
-            #pprint.pprint(post)
+            # pprint.pprint(post_attr)
+            # pprint.pprint(post)
             continue
 
-        # add timezone information to timstamp
+        # add timezone information to timestamp
         if config.app_settings.timezone_string is not None:
             if isinstance(run.start_date, datetime):
                 run.start_date = config.app_settings.timezone_string.localize(run.start_date)
@@ -169,15 +179,17 @@ def get_hash_runs(id: int = None):
             if isinstance(run.end_date, datetime):
                 run.end_date = config.app_settings.timezone_string.localize(run.end_date)
 
-        #print(run.json(indent=4, sort_keys=True))
+        # print(run.json(indent=4, sort_keys=True))
 
-        if id is not None:
+        if run_id is not None:
             single_run = run
             break
 
         return_list.append(run)
 
-    if id is not None:
+    if run_id is not None:
         return single_run
     else:
         return return_list
+
+# EOF

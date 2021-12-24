@@ -13,9 +13,10 @@ from enum import Enum
 
 from pydantic import BaseModel, AnyHttpUrl, Field, validator
 
+
 class HashAttributes(str, Enum):
     harriette_run = 'harriette-run'
-    men_only_hash =  'men-only-hash'
+    men_only_hash = 'men-only-hash'
     woman_only_hash = 'woman-only-hash'
     kids_allowed = 'kids-allowed'
     no_kids_allowed = 'no-kids-allowed'
@@ -41,7 +42,8 @@ class HashAttributes(str, Enum):
     catch_the_hare = 'catch-the-hare'
     bring_cash_on_trail = 'bring-cash-on-trail'
     bag_drop_available = 'bag-drop-available'
-    agm: 'AGM'
+    agm = 'AGM'
+
 
 class HashScope(str, Enum):
     unspecified = 'unspecified'
@@ -78,8 +80,8 @@ class Hash(BaseModel):
 
     contact: Optional[str] = Field(None, description="phone number or email of a contact")
     geo_lat: Optional[str] = Field(None, description="geo location latitude")
-    geo_long: Optional[str] = Field(None, description="geo location longtitude")
-    geo_loncation_name: Optional[str] = Field(None, description="geo location name/address")
+    geo_long: Optional[str] = Field(None, description="geo location longitude")
+    geo_location_name: Optional[str] = Field(None, description="geo location name/address")
     geo_map_url: Optional[AnyHttpUrl] = Field(None, description="a url to the location")
     location_name: Optional[str] = Field(None, description="name of the location")
     location_additional_info: Optional[str] = Field(None, description="additional location description")

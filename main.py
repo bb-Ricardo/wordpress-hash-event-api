@@ -7,15 +7,16 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from logging.config import dictConfig
+
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 from pydantic import BaseSettings, ValidationError
-from source.database import setup_db_handler
+
+from source.database import setup_db_handler, db_setting_attributes
 import common.config as config
-from common.logging import setup_logging
+from common.log import setup_logging
 from routers import runs
-from source.database import db_setting_attributes
-from logging.config import dictConfig
 from config.log import request_logger_config
 
 settings_file = "config.ini"
@@ -24,11 +25,11 @@ log = None
 
 
 class APISettings(BaseSettings):
-    description='Hash Run API for wordpress Event Manager'
-    title='Kennel Runs API'
-    openapi_url= "/openapi.json"
-    root_path="/"
-    version='0.1'
+    description = 'Hash Run API for wordpress Event Manager'
+    title = 'Kennel Runs API'
+    openapi_url = "/openapi.json"
+    root_path = "/"
+    version = '0.1'
     debug = False
 
 
@@ -82,8 +83,9 @@ def get_app() -> FastAPI:
     if api_config.get("api_root_path") is not None:
         api_settings.root_path = api_config.get("api_root_path")
 
-    # read app settings from cconfig and try to find settings in wordpress db if not defined in config
-    app_settings_config = config.get_config(config_handler, section="app_config", valid_settings=config.app_settings.dict())
+    # read app settings from config and try to find settings in wordpress db if not defined in config
+    app_settings_config = config.get_config(
+        config_handler, section="app_config", valid_settings=config.app_settings.dict())
 
     # try to find further settings in DB if undefined
     for key, value in app_settings_config.items():
@@ -125,5 +127,7 @@ def get_app() -> FastAPI:
 
     return server
 
+
 app = get_app()
 
+# EOF

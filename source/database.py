@@ -7,9 +7,9 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import Dict, List
+from typing import Dict, List, AnyStr, Union
 import mysql.connector
-from common.logging import get_logger
+from common.log import get_logger
 
 log = get_logger()
 
@@ -23,7 +23,7 @@ db_setting_attributes = {
 conn = None
 
 
-class DBConnection():
+class DBConnection:
 
     session = None
     host = None
@@ -40,8 +40,8 @@ class DBConnection():
         if self.session is None:
             self.init_session()
 
-    def init_session(self):
-        log.debug("Intiating DB session")
+    def init_session(self) -> None:
+        log.debug("Initiating DB session")
         try:
             self.session = mysql.connector.connect(
                 host=self.host,
@@ -50,7 +50,7 @@ class DBConnection():
                 database=self.database
             )
         except mysql.connector.Error as e:
-            log.error(f"DB error occured: {e}")
+            log.error(f"DB error occurred: {e}")
             return
 
         log.debug("Successfully initiated DB connection")
@@ -58,7 +58,7 @@ class DBConnection():
         # disable caching
         self.session.autocommit = True
 
-    def execute_query(self, query):
+    def execute_query(self, query: str) -> List[Dict]:
         log.debug(f"Performing DB query: {query}")
 
         if self.session is None or self.session.is_connected() is not True:
@@ -69,7 +69,9 @@ class DBConnection():
             cursor.execute(query)
             return cursor.fetchall()
         except mysql.connector.Error as e:
-            log.error(f"DB error occured: {e}")
+            log.error(f"DB error occurred: {e}")
+
+        return list()
 
     def get_posts(self, post_id: int = None) -> List[Dict]:
         query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, " \
@@ -80,6 +82,7 @@ class DBConnection():
                 "WHERE p.post_type = 'event_listing'"
         if post_id is not None:
             query += f" AND p.id = {post_id}"
+
         return self.execute_query(query)
 
     def get_posts_meta(self, post_id: int = None) -> List[Dict]:
@@ -96,18 +99,19 @@ class DBConnection():
 
         return self.execute_query(query)
 
-    def get_config(self, item: str = None):
+    def get_config(self, item: str = None) -> List[Dict]:
         query = "SELECT * from `wp_options`"
         if item is not None:
             query += f" WHERE `option_name` = '{item}'"
+
         return self.execute_query(query)
 
-    def get_config_item(self, item: str = None):
-        if item is None:
+    def get_config_item(self, item: str = None) -> Union[AnyStr, None]:
+        if not isinstance(item, str):
             log.error("get_config_item() Requested config item name must be a string.")
             return
 
-        result = self.get_config(item) or list()
+        result = self.get_config(item)
         return_value = None
         if len(result) > 0:
             return_value = result[0].get("option_value")
@@ -120,7 +124,7 @@ class DBConnection():
             self.session.close()
 
 
-def get_db_handler() -> DBConnection:
+def get_db_handler() -> Union[DBConnection, None]:
     global conn
     return conn
 
