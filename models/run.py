@@ -56,6 +56,12 @@ class HashScope(str, Enum):
     other_special_event = 'other-special-event'
 
 
+class HashParams(BaseModel):
+    last_update: Optional[int] = None
+    kennel_name: Optional[str] = None
+    run_number: Optional[int] = None
+
+
 class Hash(BaseModel):
     """
         The model of a Hash run/event

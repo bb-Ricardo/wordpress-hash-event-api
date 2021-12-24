@@ -62,7 +62,7 @@ def php_deserialize(string: str):
         pass
 
 
-def get_hash_runs(run_id: int = None):
+def get_hash_runs(run_id: int = None, last_updated: str = None):
 
     conn = get_db_handler()
 
