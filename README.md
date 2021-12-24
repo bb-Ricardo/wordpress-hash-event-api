@@ -8,8 +8,10 @@
 - [x] clean up code / linting
 - [ ] describe setup and installation
 - [ ] add docker file
-- [ ] try to add "auto-install", will setup Event Manager to add all available fields to all events
+- [ ] try to add "auto-install", this should setup the Wordpress Event Manager to add all available fields to all events
 - [x] requirements.ini
+- [ ] add OpenRC init script and config to server API via uvicorn
+- [ ] add nginx config example
 
 
 ## License
