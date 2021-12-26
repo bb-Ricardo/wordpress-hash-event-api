@@ -7,64 +7,118 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
+from pytz import UTC
 from enum import Enum
 
-from pydantic import BaseModel, AnyHttpUrl, Field, validator
+from pydantic import BaseModel, AnyHttpUrl, Field, validator, ValidationError, root_validator
+from pydantic.dataclasses import dataclass
+from fastapi import Query, HTTPException # , RequestValidationError
+from fastapi.exceptions import RequestValidationError
+
+from config.hash import hash_attributes, hash_scope
+from common.misc import format_slug
+from models.exceptions import RequestValidationError
 
 
-class HashAttributes(str, Enum):
-    harriette_run = 'harriette-run'
-    men_only_hash = 'men-only-hash'
-    woman_only_hash = 'woman-only-hash'
-    kids_allowed = 'kids-allowed'
-    no_kids_allowed = 'no-kids-allowed'
-    bring_flashlight = 'bring-flashlight'
-    water_on_trail = 'water-on-trail'
-    walker_trail = 'walker-trail'
-    runner_trail = 'runner-trail'
-    long_run_trail = 'long-run-trail'
-    pub_crawl = 'pub-crawl'
-    on_after = 'on-after'
-    baby_jogger_friendly = 'baby-jogger-friendly'
-    shiggy_run = 'shiggy-run'
-    accessible_by_public_transport = 'accessible-by-public-transport'
-    bike_hash = 'bike-hash'
-    city_run = 'city-run'
-    live_hare = 'live-hare'
-    dead_hare = 'dead-hare'
-    nighttime_run = 'nighttime-run'
-    steep_hills = 'steep-hills'
-    charity_event = 'charity-event'
-    dog_friendly = 'dog-friendly'
-    pick_up_hash = 'pick-up-hash'
-    catch_the_hare = 'catch-the-hare'
-    bring_cash_on_trail = 'bring-cash-on-trail'
-    bag_drop_available = 'bag-drop-available'
-    agm = 'AGM'
+# generate from config.hash lists
+HashAttributes = Enum('HashAttributes', {x: format_slug(x) for x in hash_attributes}, type=str)
+HashAttributes.__doc__ = "attributes which can be assigned to an run/event"
 
+HashScope = Enum('HashScope', {x: format_slug(x) for x in hash_scope}, type=str)
+HashScope.__doc__ = "scope of the event"
 
-class HashScope(str, Enum):
-    unspecified = 'unspecified'
-    regular_run = 'regular-run'
-    special_local_event = 'special-local-event'
-    special_regional_event = 'special-regional-event'
-    nash_hash_event = 'nash-hash-event'
-    interhash_event = 'interhash-event'
-    world_interhash_event = 'world-interhash-event'
-    other_special_event = 'other-special-event'
+# assamble list of hash attributes to add to description
+hash_attribute_list = ", ".join([e.value for e in HashAttributes])
 
+@dataclass
+class HashParams():
+    """
+        defines params to filter for event
+    """
 
-class HashParams(BaseModel):
-    last_update: Optional[int] = None
+    id: Optional[int] = None
+    last_update: Optional[int] = Query(None, description="set as unix timestamp")
+    last_update__gt: Optional[int] = Query(None, description="set as unix timestamp")
+    last_update__lt: Optional[int] = Query(None, description="set as unix timestamp")
+    event_name: Optional[str] = None
     kennel_name: Optional[str] = None
+    event_type: Optional[str] = None
+    # comma separated list of event attributes
+    event_attributes: Optional[str] = Query(None, 
+        description=f"comma separated list of event attributes - available values: {hash_attribute_list}")
+    event_geographic_scope: Optional[HashScope] = None
+    start_date: Optional[int] = Query(None, description="set as unix timestamp")
+    start_date__gt: Optional[int] = Query(None, description="set as unix timestamp")
+    start_date__lt: Optional[int] = Query(None, description="set as unix timestamp")
+    deleted: Optional[bool] = None
     run_number: Optional[int] = None
+    run_number__gt: Optional[int] = None
+    run_number__lt: Optional[int] = None
+    run_is_counted: Optional[bool] = None
+    hares: Optional[str] = None
+    location_name: Optional[str] = None
+    limit: Optional[int] = None
+
+    def dict(cls):
+        return {k: v for k, v in cls.__dict__.items() if k != "__initialised__"}
+
+    @root_validator()
+    def check_everything(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if set(values.values()) == set([None]):
+            return values
+
+        # check mutual exclusive params
+        for mutual_exclusive in ["last_update", "start_date", "run_number"]:
+            param_name_set = None
+            for key, value in values.items():
+                if value is None:
+                    continue
+                if key.startswith(mutual_exclusive):
+                    if param_name_set is None:
+                        param_name_set = key
+                        continue
+                    else:
+                        raise RequestValidationError(loc=["query", mutual_exclusive],
+                            msg=f"parma '{param_name_set}' and '{key}' cannot be set within the same request",
+                            typ="value_error")
+
+        # convert to datetime
+        for timestamp_key in ["last_update", "start_date"]:
+            for key, value in values.items():
+                if value is None:
+                    continue
+                if key.startswith(timestamp_key):
+                    try:
+                        values[key] = datetime.fromtimestamp(value, tz=UTC)
+                    except Exception as e:
+                        raise RequestValidationError(loc=["query", key],
+                            msg=f"parma '{key}' {e}: {value}",
+                            typ="value_error")
+
+        # check valid run attributes
+        wrong_event_attributes = list()
+        valid_event_attributes = [e.value for e in HashAttributes]
+        if values.get("event_attributes") is not None:
+            for event_attribute in values.get("event_attributes").split(","):
+                if event_attribute not in valid_event_attributes:
+                    wrong_event_attributes.append(event_attribute)
+
+        if len(wrong_event_attributes) > 0:
+            wrong_attributes_string = "', '".join(wrong_event_attributes)
+            if len(wrong_event_attributes) == 1:
+                msg="parma '{}' is an invalid event attribute"
+            else:
+                msg="parmas '{}' are invalid event attributes"
+            raise RequestValidationError(loc=["query", "event_attributes"], msg=msg.format(wrong_attributes_string), typ="value_error")
+
+        return values
 
 
 class Hash(BaseModel):
     """
-        The model of a Hash run/event
+        a Hash run/event object
     """
     id: int
     last_update: datetime = Field(description="in ISO format")
@@ -74,7 +128,7 @@ class Hash(BaseModel):
     event_description: str
     event_type: str = Field(description="name of type of event")
     event_attributes: Optional[List[HashAttributes]] = None
-    event_geographic_scope: Optional[HashScope] = Field(HashScope['unspecified'])
+    event_geographic_scope: Optional[HashScope] = Field(HashScope['Unspecified'])
 
     start_date: datetime = Field(None, description="in ISO format")
     end_date: Optional[datetime] = Field(None, description="in ISO format")

@@ -3,7 +3,7 @@
 ## ToDo
 - [x] fix and test db connection timeout
 - [ ] fill README with useful information
-- [ ] add attributes to return only recently updated events
+- [x] add filters for most run attributes
 - [ ] add API auth
 - [x] clean up code / linting
 - [ ] describe setup and installation

@@ -8,15 +8,19 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from datetime import datetime
+from pytz import UTC
 import html
+from typing import List
 
 from pydantic import ValidationError
 from phpserialize import loads
+from pydantic.class_validators import validator
 
-from models.run import Hash
+from models.run import Hash, HashParams, HashScope
 import common.config as config
 from common.log import get_logger
 from source.database import get_db_handler
+
 
 log = get_logger()
 
@@ -61,17 +65,73 @@ def php_deserialize(string: str):
     except Exception:
         pass
 
+def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,str]):
 
-def get_hash_runs(run_id: int = None, last_updated: str = None):
+    def compare_attributes(value, event_value):
+        if type(value) == type(event_value):
+            if "__gt" in key and event_value > value:
+                return True
+            elif "__lt" in key and event_value < value:
+                return True
+            elif event_value == value:
+                return True
+        return False
+
+    matches = list()
+    for key, value in params.dict().items():
+        if value is None:
+            continue
+
+        # handled directly via DB query
+        if key.startswith("last_update"):
+            continue
+
+        event_value = getattr(hash_event, key, None)
+        if type(value) == str and type(event_value) == str and value.lower() in event_value.lower():
+            matches.append(True)
+            continue
+
+        if type(value) == bool and type(event_value) == bool and value == event_value:
+            matches.append(True)
+            continue
+
+        if type(value) == HashScope and value == event_value:
+            matches.append(True)
+            continue
+
+        if key.startswith("start_date") and compare_attributes(value, getattr(hash_event, "start_date")):
+            matches.append(True)
+            continue
+
+        if key.startswith("run_number") and compare_attributes(value, getattr(hash_event, "run_number")):
+            matches.append(True)
+            continue
+
+        matches.append(False)
+
+    return False if False in matches else True
+
+
+def get_hash_runs(params: HashParams) -> List:
 
     conn = get_db_handler()
 
-    posts = conn.get_posts(run_id)
-    post_meta = conn.get_posts_meta(run_id)
+    # filter last update directly via db query
+    if params.last_update is not None:
+        posts = conn.get_posts(params.id, last_update=params.last_update, compare_type="eq")
+    elif params.last_update__lt is not None:
+        posts = conn.get_posts(params.id, last_update=params.last_update__lt, compare_type="lt")
+    elif params.last_update__gt is not None:
+        posts = conn.get_posts(params.id, last_update=params.last_update__gt, compare_type="gt")
+    else:
+        posts = conn.get_posts(params.id)
+
+    post_meta = conn.get_posts_meta(params.id)
     event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_form_fields"))
 
+    error = None
+
     return_list = list()
-    single_run = None
     for post in posts or list():
 
         post_attr = {x.get("meta_key"): x.get("meta_value") for x in
@@ -136,14 +196,16 @@ def get_hash_runs(run_id: int = None, last_updated: str = None):
 
         # get kennel name
         kennel_name = get_event_manager_field_data(event_manager_form_fields, "_kennel", post_attr.get("_kennel"))
-        if kennel_name is not None:
+        if kennel_name is not None and kennel_name in config.app_settings.hash_kennels:
             hash_data["kennel_name"] = kennel_name
 
         # get event geo scope
         event_geographic_scope = get_event_manager_field_data(
             event_manager_form_fields, "_run_type", post_attr.get("_run_type"))
-        if event_geographic_scope is not None:
+        if event_geographic_scope is not None and event_geographic_scope in [e.value for e in HashScope]:
             hash_data["event_geographic_scope"] = event_geographic_scope
+        else:
+            hash_data["event_geographic_scope"] = HashScope.Unspecified
 
         # get event attributes
         event_attributes = get_event_manager_field_data(
@@ -181,15 +243,15 @@ def get_hash_runs(run_id: int = None, last_updated: str = None):
 
         # print(run.json(indent=4, sort_keys=True))
 
-        if run_id is not None:
-            single_run = run
-            break
+        # apply filters
+        if passes_filter_params(params, run) is False:
+            continue
 
         return_list.append(run)
 
-    if run_id is not None:
-        return single_run
-    else:
-        return return_list
+    log.debug(f"returning '{len(return_list)}' run/event results")
+
+    # 2nd return value is currently unused
+    return return_list, error
 
 # EOF

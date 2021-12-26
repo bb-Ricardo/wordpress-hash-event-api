@@ -14,6 +14,7 @@ from pydantic import BaseModel, validator
 import pytz
 
 from common.log import get_logger
+from common.misc import split_quoted_string
 
 
 log = get_logger()
@@ -27,6 +28,7 @@ main_config_values = {
 
 class AppSettings(BaseModel):
     blogname: str = None
+    hash_kennels: str
     default_kennel: str = None
     default_hash_cash: int = None
     timezone_string: str = None
@@ -44,8 +46,21 @@ class AppSettings(BaseModel):
         except Exception:
             raise ValueError(f"Time zone unknown: {value}")
 
+    @validator("hash_kennels")
+    def split_hash_kennels(cls, value):
+        return split_quoted_string(value, strip=True)
 
-app_settings = AppSettings()
+    @validator("default_kennel")
+    def check_default_kennel(cls, value, values):
+        if value is None:
+            return
+
+        if value not in values.get("hash_kennels"):
+            raise ValueError(f"Hash kennel '{value}' must be in list of 'hash_kennels': {values.get('hash_kennels')}")
+
+        return value
+
+app_settings = AppSettings(hash_kennels="EMPTY")
 
 
 def get_config_file(config_file):

@@ -10,8 +10,10 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Request, Depends
+from pydantic import ValidationError
 
 from models.run import Hash, HashParams
+from models.result import MultiResponse
 from factory.factory import get_hash_runs
 
 router_runs = APIRouter(
@@ -21,24 +23,31 @@ router_runs = APIRouter(
 
 
 @router_runs.get("/all", response_model=List[Hash], summary="List of runs", description="Returns all Hash runs")
-async def get_runs(request: Request, params: HashParams = Depends()):
-    print(params)
+async def get_runs(params: HashParams = Depends(HashParams)):
 
-    return get_hash_runs(None, None)
+    result, error = get_hash_runs(params)
+    if error is not None:
+        raise HTTPException(status_code=400, detail=error)
+
+    return result
 
 
 # noinspection PyShadowingBuiltins
 @router_runs.get("/{id}", response_model=Hash, summary="Returns a single Hash run")
-async def get_run(id: int, last_updated: Optional[str] = None):
+async def get_run(id: int):
     """
         To view all details related to a single run
 
         - **id**: The integer id of the run you want to view details.
     """
 
-    run = get_hash_runs(id, last_updated)
-    if run is None:
+    result, error = get_hash_runs(HashParams(id=id))
+
+    if error is not None:
+        raise HTTPException(status_code=400, detail=error)
+    if result is None or len(result) == 0:
         raise HTTPException(status_code=404, detail="Run not found")
-    return run
+
+    return result[0]
 
 # EOF

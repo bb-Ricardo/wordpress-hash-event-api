@@ -7,6 +7,7 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from datetime import datetime
 from typing import Dict, List, AnyStr, Union
 import mysql.connector
 from common.log import get_logger
@@ -67,13 +68,23 @@ class DBConnection:
         try:
             cursor = self.session.cursor(dictionary=True)
             cursor.execute(query)
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+            if rows is not None:
+                log.debug(f"DB returned '{len(rows)}' result%s" % ("s" if len(rows) != 1 else ""))
+            return rows
         except mysql.connector.Error as e:
             log.error(f"DB error occurred: {e}")
 
         return list()
 
-    def get_posts(self, post_id: int = None) -> List[Dict]:
+    def get_posts(self, post_id: int = None, last_update: datetime = None, compare_type: str = "eq") -> List[Dict]:
+
+        if compare_type not in ["lt", "gt", "eq"]:
+            raise ValueError("attribute 'compare_type' must be one of: lt, gt, eq")
+
+        if last_update is not None and not isinstance(last_update, datetime):
+            raise ValueError(f"attribute 'last_update' must be of type 'datetime' got: {type(last_update)}")
+
         query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, " \
                 "wp_t.name as post_category " \
                 "FROM wp_posts as p " \
@@ -82,6 +93,15 @@ class DBConnection:
                 "WHERE p.post_type = 'event_listing'"
         if post_id is not None:
             query += f" AND p.id = {post_id}"
+
+        if last_update is not None:
+            compare_string = "="
+            if compare_type == "lt":
+                compare_string = "<"
+            elif compare_type == "gt":
+                compare_string = ">"
+
+            query += f" AND p.post_modified_gmt {compare_string} '{last_update}'"
 
         return self.execute_query(query)
 
