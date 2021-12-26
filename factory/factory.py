@@ -13,12 +13,12 @@ import html
 from typing import List
 
 from pydantic import ValidationError
-from phpserialize import loads
 from pydantic.class_validators import validator
 
 from models.run import Hash, HashParams, HashScope
 import common.config as config
 from common.log import get_logger
+from common.misc import php_deserialize
 from source.database import get_db_handler
 
 
@@ -56,14 +56,6 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
 
     return None
 
-
-def php_deserialize(string: str):
-
-    # noinspection PyBroadException
-    try:
-        return loads(string.encode('utf-8'), charset='utf-8', decode_strings=True)
-    except Exception:
-        pass
 
 def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,str]):
 

@@ -16,6 +16,7 @@ from pydantic import BaseSettings, ValidationError
 from source.database import setup_db_handler, db_setting_attributes
 import common.config as config
 from common.log import setup_logging
+from source.manage_evnet_fields import update_event_manager_fields
 from routers import runs
 from config.log import request_logger_config
 
@@ -83,6 +84,27 @@ def get_app() -> FastAPI:
     if api_config.get("api_root_path") is not None:
         api_settings.root_path = api_config.get("api_root_path")
 
+    # check installed Event Manager version
+    installed_event_manager_version = conn.get_config_item("wp_event_manager_version")
+    if installed_event_manager_version is None:
+        log.error("Wordpress event manager plugin not installed")
+        exit(1)
+    else:
+        log.debug(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
+        fersion_supported = False
+        # try to compare versions
+        try:
+            version_split = installed_event_manager_version.split(".")
+            if int(version_split[0]) == 3 and int(version_split[1]) >= 1 and int(version_split[2]) >= 21:
+                fersion_supported = True
+        except Exception:
+            pass
+
+        if fersion_supported is False:
+            log.error(f"Wordpress Event Manager version '{installed_event_manager_version}' unsupported. "
+                       "Minimal version needed '3.1.21'. Please update plugin.")
+            exit(1)
+
     # read app settings from config and try to find settings in wordpress db if not defined in config
     app_settings_config = config.get_config(
         config_handler, section="app_config", valid_settings=config.app_settings.dict())
@@ -97,6 +119,13 @@ def get_app() -> FastAPI:
 
         app_settings_config[key] = value
 
+    # update time zone if defined in event manager
+    event_manager_timezone_setting = conn.get_config_item("event_manager_timezone_setting")
+    if event_manager_timezone_setting is not None and event_manager_timezone_setting != "site_timezone":
+        log.debug(f"Config: updating app_config.timezone_string = {event_manager_timezone_setting}")
+        app_settings_config["timezone_string"] = event_manager_timezone_setting
+
+    # parse settings
     try:
         config.app_settings = config.AppSettings(**app_settings_config)
     except ValidationError as e:
@@ -121,6 +150,9 @@ def get_app() -> FastAPI:
     async def shutdown():
         if conn is not None:
             conn.close()
+
+    # update event manager fields in database
+    update_event_manager_fields()
 
     # add runs routes
     server.include_router(runs.router_runs)
