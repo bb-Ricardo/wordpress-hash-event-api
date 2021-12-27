@@ -64,6 +64,7 @@ def get_app() -> FastAPI:
     request_logger_config["loggers"]["uvicorn.access"]["level"] = log_level
     dictConfig(request_logger_config)
 
+    # read db settings from config file
     db_settings = config.get_config(config_handler, section="database", valid_settings=db_setting_attributes)
 
     conn = setup_db_handler(
@@ -90,7 +91,7 @@ def get_app() -> FastAPI:
         log.error("Wordpress event manager plugin not installed")
         exit(1)
     else:
-        log.debug(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
+        log.info(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
         fersion_supported = False
         # try to compare versions
         try:
