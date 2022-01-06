@@ -36,6 +36,7 @@ hash_attribute_list = ", ".join([e.value for e in HashAttributes])
 class HashParams():
     """
         defines params to filter for event
+        If more then one filter is defined, all filters have to match in oder to return an event
     """
 
     id: Optional[int] = None
@@ -45,7 +46,6 @@ class HashParams():
     event_name: Optional[str] = None
     kennel_name: Optional[str] = None
     event_type: Optional[str] = None
-    # comma separated list of event attributes
     event_attributes: Optional[str] = Query(None, 
         description=f"comma separated list of event attributes - available values: {hash_attribute_list}")
     event_geographic_scope: Optional[HashScope] = None
@@ -100,6 +100,7 @@ class HashParams():
         # check valid run attributes
         wrong_event_attributes = list()
         valid_event_attributes = [e.value for e in HashAttributes]
+        
         if values.get("event_attributes") is not None:
             for event_attribute in values.get("event_attributes").split(","):
                 if event_attribute not in valid_event_attributes:
@@ -108,9 +109,9 @@ class HashParams():
         if len(wrong_event_attributes) > 0:
             wrong_attributes_string = "', '".join(wrong_event_attributes)
             if len(wrong_event_attributes) == 1:
-                msg="parma '{}' is an invalid event attribute"
+                msg="param '{}' is an invalid event attribute"
             else:
-                msg="parmas '{}' are invalid event attributes"
+                msg="params '{}' are invalid event attributes"
             raise RequestValidationError(loc=["query", "event_attributes"], msg=msg.format(wrong_attributes_string), typ="value_error")
 
         return values
@@ -154,6 +155,7 @@ class Hash(BaseModel):
     event_currency: Optional[str] = Field("€", description="name or currency symbol")
     hash_cash_extras: Optional[int] = None
     extras_description: Optional[str] = None
+    event_hidden: bool = False
 
     class Config:
         json_encoders = {

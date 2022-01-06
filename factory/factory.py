@@ -83,7 +83,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,st
             matches.append(True)
             continue
 
-        if type(value) == bool and type(event_value) == bool and value == event_value:
+        if type(value) == type(event_value) == bool and value == event_value:
             matches.append(True)
             continue
 
@@ -108,18 +108,26 @@ def get_hash_runs(params: HashParams) -> List:
 
     conn = get_db_handler()
 
+    post_query_data = {
+        "post_id": params.id,
+        "max": params.max
+    }
+
     # filter last update directly via db query
     if params.last_update is not None:
-        posts = conn.get_posts(params.id, last_update=params.last_update, compare_type="eq")
+        post_query_data["last_update"] = params.last_update
+        post_query_data["compare_type"] = "eq"
     elif params.last_update__lt is not None:
-        posts = conn.get_posts(params.id, last_update=params.last_update__lt, compare_type="lt")
+        post_query_data["last_update"] = params.last_update__lt
+        post_query_data["compare_type"] = "lt"
     elif params.last_update__gt is not None:
-        posts = conn.get_posts(params.id, last_update=params.last_update__gt, compare_type="gt")
-    else:
-        posts = conn.get_posts(params.id)
+        post_query_data["last_update"] = params.last_update__gt
+        post_query_data["compare_type"] = "gt"
+    
+    posts = conn.get_posts(**post_query_data)
 
     post_meta = conn.get_posts_meta(params.id)
-    event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_form_fields"))
+    event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_submit_event_form_fields"))
 
     error = None
 

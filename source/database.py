@@ -8,7 +8,7 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from datetime import datetime
-from typing import Dict, List, AnyStr, Union
+from typing import Any, Dict, List, AnyStr, Union
 import mysql.connector
 from common.log import get_logger
 
@@ -59,7 +59,7 @@ class DBConnection:
         # disable caching
         self.session.autocommit = True
 
-    def execute_query(self, query: str) -> List[Dict]:
+    def execute_select_query(self, query: str) -> List[Dict]:
         log.debug(f"Performing DB query: {query}")
 
         if self.session is None or self.session.is_connected() is not True:
@@ -77,7 +77,24 @@ class DBConnection:
 
         return list()
 
-    def get_posts(self, post_id: int = None, last_update: datetime = None, compare_type: str = "eq") -> List[Dict]:
+    def execute_update_query(self, query: str, content: Any) -> List[Dict]:
+        log.debug(f"Performing DB query: {query}")
+
+        if self.session is None or self.session.is_connected() is not True:
+            self.init_session()
+
+        try:
+            cursor = self.session.cursor()
+            cursor.execute(query, (content,))
+            self.session.commit()
+            log.debug(f"DB updated '{cursor.rowcount}' row%s" % ("s" if cursor.rowcount != 1 else ""))
+            return cursor.rowcount
+        except mysql.connector.Error as e:
+            log.error(f"DB error occurred: {e}")
+
+        return None
+
+    def get_posts(self, post_id: int = None, last_update: datetime = None, compare_type: str = "eq", max: int = None) -> List[Dict]:
 
         if compare_type not in ["lt", "gt", "eq"]:
             raise ValueError("attribute 'compare_type' must be one of: lt, gt, eq")
@@ -103,28 +120,31 @@ class DBConnection:
 
             query += f" AND p.post_modified_gmt {compare_string} '{last_update}'"
 
-        return self.execute_query(query)
+        if isinstance(max, int):
+            query += f" LIMIT {max}"
+
+        return self.execute_select_query(query)
 
     def get_posts_meta(self, post_id: int = None) -> List[Dict]:
         query = "SELECT * FROM `wp_postmeta`"
         if post_id is not None:
             query += f" WHERE post_id = {post_id}"
 
-        return self.execute_query(query)
+        return self.execute_select_query(query)
 
     def get_users(self, user_id: int = None) -> List[Dict]:
         query = "SELECT id, display_name FROM `wp_users`"
         if user_id is not None:
             query += f" WHERE id = {user_id}"
 
-        return self.execute_query(query)
+        return self.execute_select_query(query)
 
     def get_config(self, item: str = None) -> List[Dict]:
         query = "SELECT * from `wp_options`"
         if item is not None:
             query += f" WHERE `option_name` = '{item}'"
 
-        return self.execute_query(query)
+        return self.execute_select_query(query)
 
     def get_config_item(self, item: str = None) -> Union[AnyStr, None]:
         if not isinstance(item, str):
@@ -137,6 +157,20 @@ class DBConnection:
             return_value = result[0].get("option_value")
 
         return return_value
+
+    def update_config_item(self, item: str, content: Any) -> bool:
+        if not isinstance(item, str):
+            log.error("update_config_item() Requested config item name must be a string.")
+            return False
+
+        query = f'UPDATE `wp_options` SET `option_value`=%s WHERE `wp_options`.`option_name` = "{item}"'
+
+        num_rows = self.execute_update_query(query, content)
+
+        if num_rows is None or num_rows == 0:
+            return False
+
+        return True
 
     def close(self):
         log.debug("Closing DB session")
