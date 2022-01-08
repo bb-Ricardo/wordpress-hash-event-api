@@ -16,7 +16,7 @@ from pydantic import BaseSettings, ValidationError
 from source.database import setup_db_handler, db_setting_attributes
 import common.config as config
 from common.log import setup_logging
-from source.manage_evnet_fields import update_event_manager_fields
+from source.manage_event_fields import update_event_manager_fields
 from routers import runs
 from config.log import request_logger_config
 
@@ -122,7 +122,7 @@ def get_app() -> FastAPI:
 
     # update time zone if defined in event manager
     event_manager_timezone_setting = conn.get_config_item("event_manager_timezone_setting")
-    if event_manager_timezone_setting is not None and event_manager_timezone_setting != "site_timezone":
+    if event_manager_timezone_setting is not None and event_manager_timezone_setting not in ["site_timezone", "each_event"]:
         log.debug(f"Config: updating app_config.timezone_string = {event_manager_timezone_setting}")
         app_settings_config["timezone_string"] = event_manager_timezone_setting
 

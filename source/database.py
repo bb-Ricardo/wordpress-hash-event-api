@@ -120,6 +120,8 @@ class DBConnection:
 
             query += f" AND p.post_modified_gmt {compare_string} '{last_update}'"
 
+        query += " ORDER BY p.id DESC"
+
         if isinstance(max, int):
             query += f" LIMIT {max}"
 

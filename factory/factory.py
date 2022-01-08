@@ -8,7 +8,7 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from datetime import datetime
-from pytz import UTC
+import pytz
 import html
 from typing import List
 
@@ -47,8 +47,10 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
         elif field_data.get("type") == "multiselect":
             ret_list = list()
             for field in php_deserialize(field_value).values():
-                ret_list.append(field_data.get("options").get(field))
+                ret_list.append(field)
             return ret_list
+        elif field_data.get("type") == "timezone":
+            return pytz.timezone(field_value)
         else:
             return field_value
     except Exception:
@@ -57,7 +59,7 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
     return None
 
 
-def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,str]):
+def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
 
     def compare_attributes(value, event_value):
         if type(value) == type(event_value):
@@ -71,7 +73,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,st
 
     matches = list()
     for key, value in params.dict().items():
-        if value is None:
+        if value is None or key == "id":
             continue
 
         # handled directly via DB query
@@ -79,7 +81,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,st
             continue
 
         event_value = getattr(hash_event, key, None)
-        if type(value) == str and type(event_value) == str and value.lower() in event_value.lower():
+        if type(value) == type(event_value) == str and value.lower() in event_value.lower():
             matches.append(True)
             continue
 
@@ -105,12 +107,14 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> tuple([bool,st
 
 
 def get_hash_runs(params: HashParams) -> List:
+    """
+
+    """
 
     conn = get_db_handler()
 
     post_query_data = {
-        "post_id": params.id,
-        "max": params.max
+        "post_id": params.id
     }
 
     # filter last update directly via db query
@@ -131,6 +135,8 @@ def get_hash_runs(params: HashParams) -> List:
 
     error = None
 
+    import pprint
+    #pprint.pprint(event_manager_form_fields)
     return_list = list()
     for post in posts or list():
 
@@ -139,6 +145,9 @@ def get_hash_runs(params: HashParams) -> List:
                       if d.get("post_id") == post.get("id") and len(str(d.get("meta_value"))) != 0
                       ]
                      }
+
+        # pprint.pprint(post_attr)
+        pprint.pprint(post.get("post_status"))
 
         # if start date is not set, ignore event
         if post_attr.get("_event_start_date") is None:
@@ -155,22 +164,38 @@ def get_hash_runs(params: HashParams) -> List:
             "event_description": post.get("post_content"),
             "event_type": post.get("post_category") or "Regular Run",
             "start_date": post_attr.get("_event_start_date"),
-            "run_number": post_attr.get("_run_number"),
+            "end_date": post_attr.get("_event_end_date"),
+            "run_number": post_attr.get("_hash_run_number"),
             "run_is_counted": True,
-            "hares": post_attr.get("_hares"),
-            "contact": post_attr.get("_contact"),
+            "hares": post_attr.get("_hash_hares"),
+            "contact": post_attr.get("_hash_contact"),
             "geo_lat": post_attr.get("geolocation_lat"),
             "geo_long": post_attr.get("geolocation_long"),
             "geo_location_name": post_attr.get("geolocation_formatted_address"),
             "location_name": post_attr.get("_event_location"),
-            "location_additional_info": post_attr.get("_location_specifics"),
+            "location_additional_info": post_attr.get("_hash_location_specifics"),
             "facebook_group_id": config.app_settings.default_facebook_group_id,
             "hash_cash_members": config.app_settings.default_hash_cash,
             "hash_cash_non_members": config.app_settings.default_hash_cash,
             "event_currency": config.app_settings.default_currency,
             "hash_cash_extras": post_attr.get("_hash_cash_extras"),
-            "extras_description": post_attr.get("_extras_description"),
+            "extras_description": post_attr.get("_hash_extras_description"),
+            "event_hidden": True if post_attr.get("_hash_event_hidden") == '1' else False
         }
+
+        # valide time attributes
+        try:
+            datetime.strptime(hash_data.get("start_date"), '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            log.error(f"Start date '{hash_data.get('start_date')}' is not set or missing the time string")
+            continue
+
+        if hash_data.get("end_date") is not None:
+            try:
+                datetime.strptime(hash_data.get("end_date"), '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                log.warning(f"End date '{hash_data.get('end_date')}' is not set or missing the time string")
+                hash_data["end_date"] = None
 
         # only published and expired events count as not deleted
         if post.get("post_status") in ["publish", "expired"] and post_attr.get("_cancelled") == "0":
@@ -181,7 +206,11 @@ def get_hash_runs(params: HashParams) -> List:
         # update hash cash if present
         if post_attr.get("_hash_cash") is not None and len(str(post_attr.get("_hash_cash"))) > 0:
             hash_data["hash_cash_members"] = post_attr.get("_hash_cash")
-            hash_data["hash_cash_non_members"] = post_attr.get("_hash_cash")
+        
+        if post_attr.get("_hash_cash_non_members") is not None and len(str(post_attr.get("_hash_cash_non_members"))) > 0:
+            hash_data["hash_cash_non_members"] = post_attr.get("_hash_cash_non_members")
+        else:
+            hash_data["hash_cash_non_members"] = hash_data["hash_cash_members"]
 
         # get event url and unescape the link
         # noinspection PyBroadException
@@ -195,13 +224,12 @@ def get_hash_runs(params: HashParams) -> List:
             event_manager_form_fields, "_event_banner", post_attr.get("_event_banner"))
 
         # get kennel name
-        kennel_name = get_event_manager_field_data(event_manager_form_fields, "_kennel", post_attr.get("_kennel"))
+        kennel_name = get_event_manager_field_data(event_manager_form_fields, "_hash_kennel", post_attr.get("_hash_kennel"))
         if kennel_name is not None and kennel_name in config.app_settings.hash_kennels:
             hash_data["kennel_name"] = kennel_name
 
         # get event geo scope
-        event_geographic_scope = get_event_manager_field_data(
-            event_manager_form_fields, "_run_type", post_attr.get("_run_type"))
+        event_geographic_scope = post_attr.get("_hash_scope")
         if event_geographic_scope is not None and event_geographic_scope in [e.value for e in HashScope]:
             hash_data["event_geographic_scope"] = event_geographic_scope
         else:
@@ -209,18 +237,13 @@ def get_hash_runs(params: HashParams) -> List:
 
         # get event attributes
         event_attributes = get_event_manager_field_data(
-            event_manager_form_fields, "_attributes", post_attr.get("_attributes"))
+            event_manager_form_fields, "_hash_attributes", post_attr.get("_hash_attributes"))
         if event_attributes is not None and isinstance(event_attributes, list):
             hash_data["event_attributes"] = event_attributes
 
-        # get end date
-        if post_attr.get("_end_date") is not None:
-            end_date = post_attr.get("_end_date")
-            if post_attr.get("_end_time") is not None:
-                end_date = f"{end_date} {post_attr.get('_end_time')}"
-            hash_data["end_date"] = end_date
-
         # parse event data
+        #pprint.pprint(hash_data)
+
         try:
             run = Hash(**hash_data)
         except ValidationError as e:
@@ -230,24 +253,34 @@ def get_hash_runs(params: HashParams) -> List:
             # pprint.pprint(post)
             continue
 
-        # add timezone information to timestamp
-        if config.app_settings.timezone_string is not None:
-            if isinstance(run.start_date, datetime):
-                run.start_date = config.app_settings.timezone_string.localize(run.start_date)
+        event_time_zone = get_event_manager_field_data(event_manager_form_fields,
+            "_event_timezone", post_attr.get("_event_timezone"))
 
+        if event_time_zone is None and config.app_settings.timezone_string is not None:
+            event_time_zone = config.app_settings.timezone_string
+
+        # add timezone information to timestamp
+        if event_time_zone is not None:
+            if isinstance(run.start_date, datetime):
+                run.start_date = event_time_zone.localize(run.start_date)
+
+            if isinstance(run.end_date, datetime):
+                run.end_date = event_time_zone.localize(run.end_date)
+
+        if config.app_settings.timezone_string is not None:
             if isinstance(run.last_update, datetime):
                 run.last_update = config.app_settings.timezone_string.localize(run.last_update)
 
-            if isinstance(run.end_date, datetime):
-                run.end_date = config.app_settings.timezone_string.localize(run.end_date)
-
-        # print(run.json(indent=4, sort_keys=True))
+        #print(run.json(indent=4, sort_keys=True))
 
         # apply filters
         if passes_filter_params(params, run) is False:
             continue
 
         return_list.append(run)
+
+        if params.limit is not None and len(return_list) >= params.limit:
+            break
 
     log.debug(f"returning '{len(return_list)}' run/event results")
 

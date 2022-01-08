@@ -67,6 +67,13 @@ class HashEventManagerData:
                 "type": "number",
                 "required": False
             },
+            "hash_cash_non_members": {
+                "label": "Hash Cash Non Members",
+                "description": 'Amount of Hash Cash which are visiting or not members of this kennel',
+                "placeholder": config.app_settings.default_hash_cash or "",
+                "type": "number",
+                "required": False
+            },
             "hash_kennel": {
                 "label": "Kennel",
                 "description": "pick a Kennel",
@@ -161,7 +168,7 @@ def update_event_manager_fields():
 
         for a_key, a_value in attributes.items():
 
-            if str(event_fields[key][a_key]) != str(a_value):
+            if str(event_fields[key].get(a_key)) != str(a_value):
                 event_fields[key][a_key] = a_value
                 update_data = True
                 log.info(f"Updated Event Manager field '{key}' attribute {a_key} to '{a_value}'")
