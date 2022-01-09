@@ -42,8 +42,11 @@ def format_slug(text: str = None, max_len: int =50) -> str:
         str: input name formatted as slug und truncated if necessary
         """
 
-        if text is None or len(text) == 0:
-            raise AttributeError("Argument 'text' can't be None or empty!")
+        if text is None:
+            raise AttributeError("Argument 'text' can't be None")
+
+        if len(text) == 0:
+            return ""
 
         permitted_chars = (
             "abcdefghijklmnopqrstuvwxyz"  # alphabet

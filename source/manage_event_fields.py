@@ -199,7 +199,7 @@ def update_event_manager_fields():
             if str(event_fields[key].get(a_key)) != str(a_value):
                 event_fields[key][a_key] = a_value
                 update_data = True
-                log.info(f"Updated Event Manager field '{key}' attribute {a_key} to '{a_value}'")
+                log.info(f"Updated Event Manager field '{key}' attribute '{a_key}' to '{a_value}'")
 
 
     if update_data is False:

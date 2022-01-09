@@ -8,10 +8,10 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from logging.config import dictConfig as logDictConfig
+import os
 
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
-from pydantic import ValidationError
 
 from config.models.database import DBSettings
 from config.models.api import APIConfigSettings
@@ -40,11 +40,17 @@ def get_app() -> FastAPI:
     # get config file path
     config_file = config.get_config_file(settings_file)
 
+    log_level = default_log_level
+
     # get config handler
-    config_handler = config.open_config_file(config_file)
+    config_handler = None
+    if os.path.exists(config_file):
+
+        config_handler = config.open_config_file(config_file)
     
-    # config overwrites default
-    log_level = config_handler.get(MainConfigSettings.config_section_name(), "log_level", fallback=default_log_level)
+        # config overwrites default
+        if config_handler is not None:
+            log_level = config_handler.get(MainConfigSettings.config_section_name(), "log_level", fallback=log_level)
 
     # env overwrites config value
     log_level = MainConfigSettings(log_level=log_level).log_level
@@ -53,6 +59,11 @@ def get_app() -> FastAPI:
     log = setup_logging(log_level)
 
     log.info(f"Starting {basic_api_settings.description} v{basic_api_settings.version}")
+
+    if not os.path.exists(config_file):
+        log.warning(f"Config file '{config_file}' not found. Reading config from env vars")
+    elif config_handler is None:
+        log.warning(f"Problems while reading config file. Reading config from env vars")
 
     if log_level == "DEBUG":
         basic_api_settings.debug = True
@@ -77,13 +88,6 @@ def get_app() -> FastAPI:
         log.error("Exit due to database connection error")
         exit(1)
 
-    # parse api settings from config
-    api_settings = config.get_config_object(config_handler, APIConfigSettings)
-    if api_settings.root_path is not None:
-        basic_api_settings.root_path = api_settings.root_path
-
-    set_api_key(api_settings.token)
-
     # read app settings from config and try to find settings in wordpress db if not defined in config
     app_settings = config.get_config_object(config_handler, AppSettings)
 
@@ -92,31 +96,25 @@ def get_app() -> FastAPI:
         if value is None:
             db_setting = conn.get_config_item(key)
             if db_setting is not None:
-                log.debug(f"Config: updating app_config.{key} = {db_setting}")
+                log.debug(f"Config: updating {AppSettings.config_section_name()}.{key} = {db_setting}")
                 value = db_setting
 
         setattr(app_settings, key, value)
 
-    # update time zone if defined in event manager
-    event_manager_timezone_setting = conn.get_config_item("event_manager_timezone_setting")
-    if event_manager_timezone_setting is not None and event_manager_timezone_setting not in ["site_timezone", "each_event"]:
-        log.debug(f"Config: updating app_config.timezone_string = {event_manager_timezone_setting}")
-        setattr(app_settings, "timezone_string", event_manager_timezone_setting)
-
     # parse settings
-    try:
-        config.app_settings = AppSettings(**app_settings.dict())
-    except ValidationError as e:
-        e = str(e).replace('\n', ":")
-        log.error(f"Unable to parse config: {e}")
-        exit(1)
-
-    print(config.app_settings)
+    config.app_settings = config.validate_config_object(AppSettings, app_settings.dict())
 
     # update event manager fields in database
     update_event_manager_fields()
 
     # initialize FastAPI app
+    # parse api settings from config
+    api_settings = config.get_config_object(config_handler, APIConfigSettings)
+    if api_settings.root_path is not None:
+        basic_api_settings.root_path = api_settings.root_path
+
+    # set api key if defined
+    set_api_key(api_settings.token)
 
     # create FastAPI instance
     server = FastAPI(**basic_api_settings.dict())

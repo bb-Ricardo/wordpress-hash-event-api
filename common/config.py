@@ -7,7 +7,6 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import Tuple
 import configparser
 import os
 
@@ -23,19 +22,27 @@ log = get_logger()
 
 app_settings = AppSettings(hash_kennels="EMPTY")
 
+def validate_config_object(config_class, settings):
+
+    try:
+        settings_object = config_class(**settings)
+    except ValidationError as e:
+        e = str(e).replace('\n', ": ")
+        log.error(f"Unable to parse config (also check defined env vars): {e}")
+        exit(1)
+
+    return settings_object
+
 def get_config_object(handler, config_class):
 
     config_section = config_class.config_section_name()
 
     # read db settings from config file
-    settings_dict = get_config(handler, section=config_section, valid_settings=config_class.defaults_dict())
+    settings_dict = dict()
+    if handler is not None:
+        settings_dict = get_config(handler, section=config_section, valid_settings=config_class.defaults_dict())
 
-    try:
-        settings_object = config_class(**settings_dict)
-    except ValidationError as e:
-        e = str(e).replace('\n', ":")
-        log.error(f"Unable to parse config (also check defined env vars): {e}")
-        exit(1)
+    settings_object = validate_config_object(config_class, settings_dict)
 
     for item, value in settings_object:
                 # take care of logging sensitive data
@@ -95,10 +102,12 @@ def open_config_file(config_file):
     # noinspection PyBroadException
     try:
         config_handler.read_file(open(config_file))
-    except configparser.Error as e:
-        raise Exception(f"ERROR: Problem while config file parsing: {e}")
+    except (configparser.Error, AttributeError) as e:
+        log.warning(f"Problem while config file '{config_file}' parsing: {e}")
+        return
     except Exception:
-        raise Exception(f"ERROR: Unable to open file '{config_file}'")
+        log.warning(f"Unable to open file '{config_file}'")
+        return
 
     return config_handler
 
