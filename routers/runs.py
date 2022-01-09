@@ -10,8 +10,10 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi.security.api_key import APIKey
 from pydantic import ValidationError
 
+from api.security import get_api_key
 from models.run import Hash, HashParams
 from models.result import MultiResponse
 from factory.factory import get_hash_runs
@@ -23,7 +25,7 @@ router_runs = APIRouter(
 
 
 @router_runs.get("/all", response_model=List[Hash], summary="List of runs", description="Returns all Hash runs")
-async def get_runs(params: HashParams = Depends(HashParams)):
+async def get_runs(params: HashParams = Depends(HashParams), api_key: APIKey = Depends(get_api_key)):
 
     result, error = get_hash_runs(params)
     if error is not None:
@@ -34,7 +36,7 @@ async def get_runs(params: HashParams = Depends(HashParams)):
 
 # noinspection PyShadowingBuiltins
 @router_runs.get("/{id}", response_model=Hash, summary="Returns a single Hash run")
-async def get_run(id: int):
+async def get_run(id: int, api_key: APIKey = Depends(get_api_key)):
     """
         To view all details related to a single run
 

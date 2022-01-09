@@ -133,8 +133,36 @@ class HashEventManagerData:
         }
 
 
+def check_event_manager_version():
+
+    conn = get_db_handler()
+
+    # check installed Event Manager version
+    installed_event_manager_version = conn.get_config_item("wp_event_manager_version")
+
+    if installed_event_manager_version is None:
+        log.error("Wordpress event manager plugin not installed")
+        exit(1)
+    else:
+        log.info(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
+        fersion_supported = False
+        # try to compare versions
+        try:
+            version_split = installed_event_manager_version.split(".")
+            if int(version_split[0]) == 3 and int(version_split[1]) >= 1 and int(version_split[2]) >= 21:
+                fersion_supported = True
+        except Exception:
+            pass
+
+        if fersion_supported is False:
+            log.error(f"Wordpress Event Manager version '{installed_event_manager_version}' unsupported. "
+                       "Minimal version needed '3.1.21'. Please update plugin.")
+            exit(1)
+
 
 def update_event_manager_fields():
+
+    check_event_manager_version()
 
     conn = get_db_handler()
 

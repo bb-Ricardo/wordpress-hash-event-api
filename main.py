@@ -7,13 +7,19 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from logging.config import dictConfig
+from logging.config import dictConfig as logDictConfig
 
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
-from pydantic import BaseSettings, ValidationError
+from pydantic import ValidationError
 
-from source.database import setup_db_handler, db_setting_attributes
+from config.models.database import DBSettings
+from config.models.api import APIConfigSettings
+from config.models.main import MainConfigSettings
+from config.models.app import AppSettings
+from source.database import setup_db_handler
+from api.config import BasicAPISettings
+from api.security import set_api_key, get_api_key
 import common.config as config
 from common.log import setup_logging
 from source.manage_event_fields import update_event_manager_fields
@@ -25,53 +31,44 @@ default_log_level = "INFO"
 log = None
 
 
-class APISettings(BaseSettings):
-    description = 'Hash Run API for wordpress Event Manager'
-    title = 'Kennel Runs API'
-    openapi_url = "/openapi.json"
-    root_path = "/"
-    version = '0.1'
-    debug = False
-
-
 def get_app() -> FastAPI:
 
     global log
 
-    api_settings = APISettings()
+    basic_api_settings = BasicAPISettings()
 
     # get config file path
     config_file = config.get_config_file(settings_file)
 
     # get config handler
     config_handler = config.open_config_file(config_file)
-
-    # set log level
-    log_level = default_log_level
     
     # config overwrites default
-    log_level = config_handler.get("main", "log_level", fallback=log_level)
+    log_level = config_handler.get(MainConfigSettings.config_section_name(), "log_level", fallback=default_log_level)
+
+    # env overwrites config value
+    log_level = MainConfigSettings(log_level=log_level).log_level
 
     # setup logging
     log = setup_logging(log_level)
 
-    log.info(f"Starting {api_settings.description} v{api_settings.version}")
+    log.info(f"Starting {basic_api_settings.description} v{basic_api_settings.version}")
 
     if log_level == "DEBUG":
-        api_settings.debug = True
+        basic_api_settings.debug = True
 
     # configure request logger
     request_logger_config["loggers"]["uvicorn.access"]["level"] = log_level
-    dictConfig(request_logger_config)
+    logDictConfig(request_logger_config)
 
-    # read db settings from config file
-    db_settings = config.get_config(config_handler, section="database", valid_settings=db_setting_attributes)
-
+    # parse settings for db and initialize db connection
+    db_settings = config.get_config_object(config_handler, DBSettings)
     conn = setup_db_handler(
-        host_name=db_settings.get("db_host"),
-        user_name=db_settings.get("db_username"),
-        user_password=db_settings.get("db_password"),
-        db_name=db_settings.get("db_name")
+        host_name=db_settings.host,
+        user_name=db_settings.username,
+        user_password=db_settings.password,
+        db_name=db_settings.name,
+        db_port=db_settings.port
     )
 
     if conn is not None and conn.session is not None:
@@ -80,71 +77,49 @@ def get_app() -> FastAPI:
         log.error("Exit due to database connection error")
         exit(1)
 
-    api_config = config.get_config(config_handler, section="main", valid_settings=config.main_config_values)
+    # parse api settings from config
+    api_settings = config.get_config_object(config_handler, APIConfigSettings)
+    if api_settings.root_path is not None:
+        basic_api_settings.root_path = api_settings.root_path
 
-    if api_config.get("api_root_path") is not None:
-        api_settings.root_path = api_config.get("api_root_path")
-
-    # check installed Event Manager version
-    installed_event_manager_version = conn.get_config_item("wp_event_manager_version")
-    if installed_event_manager_version is None:
-        log.error("Wordpress event manager plugin not installed")
-        exit(1)
-    else:
-        log.info(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
-        fersion_supported = False
-        # try to compare versions
-        try:
-            version_split = installed_event_manager_version.split(".")
-            if int(version_split[0]) == 3 and int(version_split[1]) >= 1 and int(version_split[2]) >= 21:
-                fersion_supported = True
-        except Exception:
-            pass
-
-        if fersion_supported is False:
-            log.error(f"Wordpress Event Manager version '{installed_event_manager_version}' unsupported. "
-                       "Minimal version needed '3.1.21'. Please update plugin.")
-            exit(1)
+    set_api_key(api_settings.token)
 
     # read app settings from config and try to find settings in wordpress db if not defined in config
-    app_settings_config = config.get_config(
-        config_handler, section="app_config", valid_settings=config.app_settings.dict())
+    app_settings = config.get_config_object(config_handler, AppSettings)
 
     # try to find further settings in DB if undefined
-    for key, value in app_settings_config.items():
+    for key, value in app_settings:
         if value is None:
             db_setting = conn.get_config_item(key)
             if db_setting is not None:
                 log.debug(f"Config: updating app_config.{key} = {db_setting}")
                 value = db_setting
 
-        app_settings_config[key] = value
+        setattr(app_settings, key, value)
 
     # update time zone if defined in event manager
     event_manager_timezone_setting = conn.get_config_item("event_manager_timezone_setting")
     if event_manager_timezone_setting is not None and event_manager_timezone_setting not in ["site_timezone", "each_event"]:
         log.debug(f"Config: updating app_config.timezone_string = {event_manager_timezone_setting}")
-        app_settings_config["timezone_string"] = event_manager_timezone_setting
+        setattr(app_settings, "timezone_string", event_manager_timezone_setting)
 
     # parse settings
     try:
-        config.app_settings = config.AppSettings(**app_settings_config)
+        config.app_settings = AppSettings(**app_settings.dict())
     except ValidationError as e:
         e = str(e).replace('\n', ":")
         log.error(f"Unable to parse config: {e}")
         exit(1)
 
+    print(config.app_settings)
+
+    # update event manager fields in database
+    update_event_manager_fields()
+
+    # initialize FastAPI app
+
     # create FastAPI instance
-    server = FastAPI(**api_settings.dict())
-
-    # add default route redirect to docs
-    @server.get("/", include_in_schema=False)
-    def redirect_to_docs() -> RedirectResponse:
-        return RedirectResponse(f"{api_settings.root_path}/docs")
-
-    @server.get("/status", include_in_schema=False)
-    def status():
-        return {"status": "ok"}
+    server = FastAPI(**basic_api_settings.dict())
 
     # close DB connection on shutdown
     @server.on_event("shutdown")
@@ -152,8 +127,19 @@ def get_app() -> FastAPI:
         if conn is not None:
             conn.close()
 
-    # update event manager fields in database
-    update_event_manager_fields()
+    # disable API authorization if no token is defined
+    if api_settings.token is None:
+        log.info("No API token defined, disabling API Authentication")
+        server.dependency_overrides[get_api_key] = lambda: None
+
+    # add default route redirect to docs
+    @server.get("/", include_in_schema=False)
+    def redirect_to_docs() -> RedirectResponse:
+        return RedirectResponse(f"{basic_api_settings.root_path}/docs")
+
+    @server.get("/status", include_in_schema=False)
+    def status():
+        return {"status": "ok"}
 
     # add runs routes
     server.include_router(runs.router_runs)

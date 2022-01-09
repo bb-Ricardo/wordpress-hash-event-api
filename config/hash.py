@@ -7,6 +7,10 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+"""
+    ToDo:
+    Describe changing attributes here
+"""
 hash_attributes = [
     'Harriette run',
     'Men-only Hash',

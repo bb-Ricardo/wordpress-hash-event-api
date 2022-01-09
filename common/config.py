@@ -7,61 +7,46 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from typing import Tuple
 import configparser
 import os
 
-from pydantic import BaseModel, validator
-import pytz
+from pydantic import ValidationError
 
+from config.models.app import AppSettings
 from common.log import get_logger
-from common.misc import split_quoted_string
+
 
 
 log = get_logger()
 
-main_config_values = {
-    "api_token": None,
-    "log_level": "INFO",
-    "api_root_path": None
-}
-
-
-class AppSettings(BaseModel):
-    blogname: str = None
-    hash_kennels: str
-    default_kennel: str = None
-    default_hash_cash: int = None
-    timezone_string: str = None
-    default_currency: str = None
-    default_facebook_group_id: int = None
-
-    @validator("timezone_string")
-    def check_time_zone_string(cls, value):
-        if value is None:
-            return
-
-        # noinspection PyBroadException
-        try:
-            return pytz.timezone(value)
-        except Exception:
-            raise ValueError(f"Time zone unknown: {value}")
-
-    @validator("hash_kennels")
-    def split_hash_kennels(cls, value):
-        return split_quoted_string(value, strip=True)
-
-    @validator("default_kennel")
-    def check_default_kennel(cls, value, values):
-        if value is None:
-            return
-
-        if value not in values.get("hash_kennels"):
-            raise ValueError(f"Hash kennel '{value}' must be in list of 'hash_kennels': {values.get('hash_kennels')}")
-
-        return value
 
 app_settings = AppSettings(hash_kennels="EMPTY")
 
+def get_config_object(handler, config_class):
+
+    config_section = config_class.config_section_name()
+
+    # read db settings from config file
+    settings_dict = get_config(handler, section=config_section, valid_settings=config_class.defaults_dict())
+
+    try:
+        settings_object = config_class(**settings_dict)
+    except ValidationError as e:
+        e = str(e).replace('\n', ":")
+        log.error(f"Unable to parse config (also check defined env vars): {e}")
+        exit(1)
+
+    for item, value in settings_object:
+                # take care of logging sensitive data
+        for sensitive_item in ["token", "pass"]:
+
+            if sensitive_item.lower() in item.lower() and isinstance(value, str):
+                value = value[0:3] + "***"
+
+        log.debug(f"Config: {config_section}.{item} = {value}")
+
+    return settings_object
 
 def get_config_file(config_file):
     """
@@ -160,14 +145,6 @@ def get_config(config_handler=None, section=None, valid_settings=None, deprecate
             value = None
 
         config_dict[item] = value
-
-        # take care of logging sensitive data
-        for sensitive_item in ["token", "pass"]:
-
-            if sensitive_item.lower() in item.lower():
-                value = value[0:3] + "***"
-
-        log.debug(f"Config: {this_section}.{item} = {value}")
 
     config_dict = {}
 

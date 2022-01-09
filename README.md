@@ -8,11 +8,13 @@
 - [x] clean up code / linting
 - [ ] describe setup and installation
 - [ ] add docker file
-- [ ] try to add "auto-install", this should setup the Wordpress Event Manager to add all available fields to all events
+- [x] try to add "auto-install", this should setup the Wordpress Event Manager to add all available fields to all events
 - [x] requirements.ini
 - [ ] add OpenRC init script and config to server API via uvicorn
 - [ ] add nginx config example
 
+
+http://manpages.ubuntu.com/manpages/impish/man1/uvicorn.1.html
 
 ## License
 >You can check out the full license [here](LICENSE.txt)

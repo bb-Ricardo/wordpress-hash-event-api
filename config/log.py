@@ -8,6 +8,7 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 # taken from here: https://stackoverflow.com/questions/62934384/how-to-add-timestamp-to-each-request-in-uvicorn-logs
+
 request_logger_config = {
     "version": 1,
     "disable_existing_loggers": False,

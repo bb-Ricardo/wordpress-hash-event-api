@@ -13,14 +13,6 @@ import mysql.connector
 from common.log import get_logger
 
 log = get_logger()
-
-db_setting_attributes = {
-    "db_username": None,
-    "db_password": None,
-    "db_name": None,
-    "db_host": None
-}
-
 conn = None
 
 
@@ -31,12 +23,16 @@ class DBConnection:
     user = None
     password = None
     database = None
+    port = None
 
-    def __init__(self, host_name: str, user_name: str, user_password: str, db_name: str) -> None:
+    connection_timeout = 2
+
+    def __init__(self, host_name: str, user_name: str, user_password: str, db_name: str, db_port: int = 3306) -> None:
         self.host = host_name
         self.user = user_name
         self.password = user_password
         self.database = db_name
+        self.port = db_port
 
         if self.session is None:
             self.init_session()
@@ -48,7 +44,9 @@ class DBConnection:
                 host=self.host,
                 user=self.user,
                 password=self.password,
-                database=self.database
+                database=self.database,
+                port=self.port,
+                connection_timeout=self.connection_timeout
             )
         except mysql.connector.Error as e:
             log.error(f"DB error occurred: {e}")
@@ -185,9 +183,9 @@ def get_db_handler() -> Union[DBConnection, None]:
     return conn
 
 
-def setup_db_handler(host_name: str, user_name: str, user_password: str, db_name: str) -> DBConnection:
+def setup_db_handler(host_name: str, user_name: str, user_password: str, db_name: str, db_port: int = 3306) -> DBConnection:
     global conn
-    conn = DBConnection(host_name=host_name, user_name=user_name, user_password=user_password, db_name=db_name)
+    conn = DBConnection(host_name=host_name, user_name=user_name, user_password=user_password, db_name=db_name, db_port=db_port)
     return conn
 
 # EOF
