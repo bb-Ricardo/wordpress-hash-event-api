@@ -75,7 +75,7 @@ class DBConnection:
 
         return list()
 
-    def execute_update_query(self, query: str, content: Any) -> List[Dict]:
+    def execute_update_query(self, query: str, content: Any) -> int:
         log.debug(f"Performing DB query: {query}")
 
         if self.session is None or self.session.is_connected() is not True:
@@ -90,9 +90,11 @@ class DBConnection:
         except mysql.connector.Error as e:
             log.error(f"DB error occurred: {e}")
 
-        return None
+        return 0
 
-    def get_posts(self, post_id: int = None, last_update: datetime = None, compare_type: str = "eq", max: int = None) -> List[Dict]:
+    def get_posts(
+            self, post_id: int = None, last_update: datetime = None,
+            compare_type: str = "eq", limit: int = None) -> List[Dict]:
 
         if compare_type not in ["lt", "gt", "eq"]:
             raise ValueError("attribute 'compare_type' must be one of: lt, gt, eq")
@@ -120,8 +122,8 @@ class DBConnection:
 
         query += " ORDER BY p.id DESC"
 
-        if isinstance(max, int):
-            query += f" LIMIT {max}"
+        if isinstance(limit, int):
+            query += f" LIMIT {limit}"
 
         return self.execute_select_query(query)
 
@@ -183,9 +185,12 @@ def get_db_handler() -> Union[DBConnection, None]:
     return conn
 
 
-def setup_db_handler(host_name: str, user_name: str, user_password: str, db_name: str, db_port: int = 3306) -> DBConnection:
+def setup_db_handler(
+        host_name: str, user_name: str, user_password: str, db_name: str, db_port: int = 3306
+) -> DBConnection:
     global conn
-    conn = DBConnection(host_name=host_name, user_name=user_name, user_password=user_password, db_name=db_name, db_port=db_port)
+    conn = DBConnection(
+        host_name=host_name, user_name=user_name, user_password=user_password, db_name=db_name, db_port=db_port)
     return conn
 
 # EOF

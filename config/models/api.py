@@ -15,4 +15,4 @@ class APIConfigSettings(EnvOverridesBaseSettings):
     root_path: str = "/"
 
     class Config:
-        env_prefix = f"{__module__.split('.')[-1]}_"
+        env_prefix = f"{__name__.split('.')[-1]}_"

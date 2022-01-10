@@ -9,6 +9,7 @@
 
 from fastapi import HTTPException
 
+
 class RequestValidationError(HTTPException):
     """
         return Validation Error

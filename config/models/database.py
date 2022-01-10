@@ -9,6 +9,7 @@
 
 from config.models import EnvOverridesBaseSettings
 
+
 class DBSettings(EnvOverridesBaseSettings):
     username: str
     password: str
@@ -17,4 +18,4 @@ class DBSettings(EnvOverridesBaseSettings):
     port: int = 3306
 
     class Config:
-        env_prefix = f"{__module__.split('.')[-1]}_"
+        env_prefix = f"{__name__.split('.')[-1]}_"

@@ -14,9 +14,10 @@ import pytz
 
 from common.misc import split_quoted_string
 
+
 class AppSettings(EnvOverridesBaseSettings):
     blogname: str = None
-    hash_kennels: Union[str,List]
+    hash_kennels: Union[str, List]
     default_kennel: str = None
     default_hash_cash: int = None
     timezone_string: str = None
@@ -24,7 +25,7 @@ class AppSettings(EnvOverridesBaseSettings):
     default_facebook_group_id: int = None
 
     class Config:
-        env_prefix = f"{__module__.split('.')[-1]}_"
+        env_prefix = f"{__name__.split('.')[-1]}_"
 
     @validator("timezone_string")
     def check_time_zone_string(cls, value):

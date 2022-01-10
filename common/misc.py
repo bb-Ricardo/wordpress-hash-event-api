@@ -7,11 +7,12 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import List, Any
+from typing import List, Any, Union
 import sys
 import re
 
 from phpserialize import loads, dumps
+
 
 def do_error_exit(log_text: str) -> None:
     """
@@ -27,42 +28,42 @@ def do_error_exit(log_text: str) -> None:
     exit(1)
 
 
-def format_slug(text: str = None, max_len: int =50) -> str:
-        """
-        Format string to create slug with max length.
+def format_slug(text: str = None, max_len: int = 50) -> str:
+    """
+    Format string to create slug with max length.
 
-        Parameters
-        ----------
-        text: str
-            name to format into a NetBox slug
-        max_len: int
-            maximum possible length of slug
-        Returns
-        -------
-        str: input name formatted as slug und truncated if necessary
-        """
+    Parameters
+    ----------
+    text: str
+        name to format into a NetBox slug
+    max_len: int
+        maximum possible length of slug
+    Returns
+    -------
+    str: input name formatted as slug und truncated if necessary
+    """
 
-        if text is None:
-            raise AttributeError("Argument 'text' can't be None")
+    if text is None:
+        raise AttributeError("Argument 'text' can't be None")
 
-        if len(text) == 0:
-            return ""
+    if len(text) == 0:
+        return ""
 
-        permitted_chars = (
-            "abcdefghijklmnopqrstuvwxyz"  # alphabet
-            "0123456789"  # numbers
-            "_-"  # symbols
-        )
+    permitted_chars = (
+        "abcdefghijklmnopqrstuvwxyz"  # alphabet
+        "0123456789"  # numbers
+        "_-"  # symbols
+    )
 
-        # Replace separators with dash
-        for sep in [" ", ",", "."]:
-            text = text.replace(sep, "-")
+    # Replace separators with dash
+    for sep in [" ", ",", "."]:
+        text = text.replace(sep, "-")
 
-        # Strip unacceptable characters
-        text = "".join([c for c in text.lower() if c in permitted_chars])
+    # Strip unacceptable characters
+    text = "".join([c for c in text.lower() if c in permitted_chars])
 
-        # Enforce max length
-        return text[0:max_len]
+    # Enforce max length
+    return text[0:max_len]
 
 
 def split_quoted_string(string_to_split: str, character_to_split_at: str = ",", strip: bool = False) -> List[str]:
@@ -79,14 +80,14 @@ def split_quoted_string(string_to_split: str, character_to_split_at: str = ",", 
     character_to_split_at: int
         character to split the string at
     strip: bool
-        strip each splitted part from white spaces
+        strip each part from white spaces
     Returns
     -------
-    list: splitted string parts
+    list: separated string parts
     """
 
     if not isinstance(string_to_split, str):
-        return string_to_split
+        return [string_to_split]
 
     parts = list()
     for string_part in re.split(rf"{character_to_split_at}(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)", string_to_split):
@@ -97,13 +98,13 @@ def split_quoted_string(string_to_split: str, character_to_split_at: str = ",", 
     return parts
 
 
-def php_deserialize(input: str) -> Any:
+def php_deserialize(input_data: str) -> Any:
     """
     deserialize a php array/object
 
     Parameters
     ----------
-    input: str
+    input_data: str
         string to deserialize
 
     Returns
@@ -111,16 +112,17 @@ def php_deserialize(input: str) -> Any:
     any: deserialized object
     """
 
-    if not isinstance(input, str):
+    if not isinstance(input_data, str):
         return
 
     # noinspection PyBroadException
     try:
-        return loads(input.encode('utf-8'), charset='utf-8', decode_strings=True)
+        return loads(input_data.encode('utf-8'), charset='utf-8', decode_strings=True)
     except Exception:
         pass
 
-def php_serialize(data: dict) -> str:
+
+def php_serialize(data: dict) -> Union[str, None]:
     """
     serialize a dict into a php serialized string
 

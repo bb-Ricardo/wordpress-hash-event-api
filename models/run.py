@@ -12,9 +12,9 @@ from datetime import datetime
 from pytz import UTC
 from enum import Enum
 
-from pydantic import BaseModel, AnyHttpUrl, Field, validator, ValidationError, root_validator
+from pydantic import BaseModel, AnyHttpUrl, Field, validator, root_validator
 from pydantic.dataclasses import dataclass
-from fastapi import Query, HTTPException # , RequestValidationError
+from fastapi import Query
 from fastapi.exceptions import RequestValidationError
 
 from config.hash import hash_attributes, hash_scope
@@ -32,11 +32,12 @@ HashScope.__doc__ = "scope of the event"
 # assamble list of hash attributes to add to description
 hash_attribute_list = ", ".join([e.value for e in HashAttributes])
 
+
 @dataclass
-class HashParams():
+class HashParams:
     """
         defines params to filter for event
-        If more then one filter is defined, all filters have to match in oder to return an event
+        If more than one filter is defined, all filters have to match in oder to return an event
     """
 
     id: Optional[int] = None
@@ -46,8 +47,9 @@ class HashParams():
     event_name: Optional[str] = None
     kennel_name: Optional[str] = None
     event_type: Optional[str] = None
-    event_attributes: Optional[str] = Query(None, 
-        description=f"comma separated list of event attributes - available values: {hash_attribute_list}")
+    event_attributes: Optional[str] = Query(None,
+                                            description=f"comma separated list of event attributes - "
+                                                        f"available values: {hash_attribute_list}")
     event_geographic_scope: Optional[HashScope] = None
     start_date: Optional[int] = Query(None, description="set as unix timestamp")
     start_date__gt: Optional[int] = Query(None, description="set as unix timestamp")
@@ -66,7 +68,7 @@ class HashParams():
 
     @root_validator()
     def check_everything(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if set(values.values()) == set([None]):
+        if set(values.values()) == {None}:
             return values
 
         # check mutual exclusive params
@@ -81,8 +83,9 @@ class HashParams():
                         continue
                     else:
                         raise RequestValidationError(loc=["query", mutual_exclusive],
-                            msg=f"parma '{param_name_set}' and '{key}' cannot be set within the same request",
-                            typ="value_error")
+                                                     msg=f"parma '{param_name_set}' and '{key}' cannot be set "
+                                                         f"within the same request",
+                                                     typ="value_error")
 
         # convert to datetime
         for timestamp_key in ["last_update", "start_date"]:
@@ -94,8 +97,8 @@ class HashParams():
                         values[key] = datetime.fromtimestamp(value, tz=UTC)
                     except Exception as e:
                         raise RequestValidationError(loc=["query", key],
-                            msg=f"parma '{key}' {e}: {value}",
-                            typ="value_error")
+                                                     msg=f"parma '{key}' {e}: {value}",
+                                                     typ="value_error")
 
         # check valid run attributes
         wrong_event_attributes = list()
@@ -109,10 +112,11 @@ class HashParams():
         if len(wrong_event_attributes) > 0:
             wrong_attributes_string = "', '".join(wrong_event_attributes)
             if len(wrong_event_attributes) == 1:
-                msg="param '{}' is an invalid event attribute"
+                msg = "param '{}' is an invalid event attribute"
             else:
-                msg="params '{}' are invalid event attributes"
-            raise RequestValidationError(loc=["query", "event_attributes"], msg=msg.format(wrong_attributes_string), typ="value_error")
+                msg = "params '{}' are invalid event attributes"
+            raise RequestValidationError(loc=["query", "event_attributes"],
+                                         msg=msg.format(wrong_attributes_string), typ="value_error")
 
         return values
 

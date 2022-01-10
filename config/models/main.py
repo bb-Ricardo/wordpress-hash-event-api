@@ -11,8 +11,9 @@
 from config.models import EnvOverridesBaseSettings
 from pydantic import Field
 
+
 class MainConfigSettings(EnvOverridesBaseSettings):
     log_level: str = Field("INFO", env={"log_level", "main_log_level"})
 
     class Config:
-        env_prefix = f"{__module__.split('.')[-1]}_"
+        env_prefix = f"{__name__.split('.')[-1]}_"

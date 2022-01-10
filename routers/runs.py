@@ -7,15 +7,13 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import List, Optional
+from typing import List
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security.api_key import APIKey
-from pydantic import ValidationError
 
 from api.security import get_api_key
 from models.run import Hash, HashParams
-from models.result import MultiResponse
 from factory.factory import get_hash_runs
 
 router_runs = APIRouter(
