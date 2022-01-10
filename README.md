@@ -3,6 +3,8 @@
 ## ToDo
 - [x] fix and test db connection timeout
 - [ ] fill README with useful information
+- [ ] describe config
+- [ ] function and class doc strings
 - [x] add filters for most run attributes
 - [x] add API auth
 - [x] clean up code / linting

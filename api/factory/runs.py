@@ -146,12 +146,15 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         if post_attr.get("_event_start_date") is None:
             continue
 
+        if post.get("post_content") is None or len(post.get("post_content")) == 0:
+            continue
+
         hash_data = {
             "id": post.get("id"),
             "last_update": post.get("post_modified"),
             "event_name": post.get("post_title"),
             "kennel_name": config.app_settings.default_kennel,
-            "event_description": post.get("post_content") or "",
+            "event_description": post.get("post_content"),
             "event_type": post.get("post_category") or "Regular Run",
             "start_date": post_attr.get("_event_start_date"),
             "end_date": post_attr.get("_event_end_date"),
