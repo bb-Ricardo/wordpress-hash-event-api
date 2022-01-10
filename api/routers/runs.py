@@ -10,10 +10,9 @@
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security.api_key import APIKey
 
-from api.security import get_api_key
-from models.run import Hash, HashParams
+from api.security import api_key_valid
+from api.models.run import Hash, HashParams
 from factory.factory import get_hash_runs
 
 router_runs = APIRouter(
@@ -23,7 +22,10 @@ router_runs = APIRouter(
 
 
 @router_runs.get("/all", response_model=List[Hash], summary="List of runs", description="Returns all Hash runs")
-async def get_runs(params: HashParams = Depends(HashParams), api_key: APIKey = Depends(get_api_key)):
+async def get_runs(params: HashParams = Depends(HashParams), key_valid: bool = Depends(api_key_valid)):
+
+    if key_valid is False:
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     result, error = get_hash_runs(params)
     if error is not None:
@@ -34,12 +36,15 @@ async def get_runs(params: HashParams = Depends(HashParams), api_key: APIKey = D
 
 # noinspection PyShadowingBuiltins
 @router_runs.get("/{id}", response_model=Hash, summary="Returns a single Hash run")
-async def get_run(id: int, api_key: APIKey = Depends(get_api_key)):
+async def get_run(id: int, key_valid: bool = Depends(api_key_valid)):
     """
         To view all details related to a single run
 
         - **id**: The integer id of the run you want to view details.
     """
+
+    if key_valid is False:
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     result, error = get_hash_runs(HashParams(id=id))
 

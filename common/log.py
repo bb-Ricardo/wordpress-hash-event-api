@@ -22,7 +22,7 @@ def get_logger():
     log handler
     """
 
-    return logging.getLogger("MyFastAPI")
+    return logging.getLogger("wordpress-hash-event-api")
 
 
 def setup_logging(log_level=None):
@@ -42,11 +42,13 @@ def setup_logging(log_level=None):
     log_format = '%(asctime)s - %(levelname)s: %(message)s'
 
     if log_level is None or log_level == "":
-        raise Exception("ERROR: log level undefined or empty. Check config please.")
+        print("ERROR: log level undefined or empty. Check config please.")
+        exit(1)
 
     # check set log level against self defined log level array
     if not log_level.upper() in valid_log_levels:
-        raise Exception(f"ERROR: Invalid log level: {log_level}")
+        print(f"ERROR: Invalid log level defined: {log_level}")
+        exit(1)
 
     # check the provided log level
     numeric_log_level = getattr(logging, log_level.upper(), None)

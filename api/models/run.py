@@ -19,7 +19,7 @@ from fastapi.exceptions import RequestValidationError
 
 from config.hash import hash_attributes, hash_scope
 from common.misc import format_slug
-from models.exceptions import RequestValidationError
+from api.models.exceptions import RequestValidationError
 
 
 # generate from config.hash lists
@@ -29,7 +29,7 @@ HashAttributes.__doc__ = "attributes which can be assigned to an run/event"
 HashScope = Enum('HashScope', {x: format_slug(x) for x in hash_scope}, type=str)
 HashScope.__doc__ = "scope of the event"
 
-# assamble list of hash attributes to add to description
+# assemble list of hash attributes to add to description
 hash_attribute_list = ", ".join([e.value for e in HashAttributes])
 
 

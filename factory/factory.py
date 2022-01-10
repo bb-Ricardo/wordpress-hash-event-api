@@ -13,10 +13,9 @@ import html
 from typing import List
 
 from pydantic import ValidationError
-from pydantic.class_validators import validator
 
-from models.run import Hash, HashParams, HashScope
-import common.config as config
+from api.models.run import Hash, HashParams, HashScope
+import config
 from common.log import get_logger
 from common.misc import php_deserialize
 from source.database import get_db_handler

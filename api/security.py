@@ -7,30 +7,30 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from fastapi.security.api_key import APIKeyHeader, APIKey
+from fastapi.security.api_key import APIKeyHeader
 from fastapi import Security, HTTPException
 from starlette.status import HTTP_403_FORBIDDEN
 
 API_KEY_HEADER_NAME = "Authorization"
-
+API_KEY_TYPE = "Token"
 api_key = None
 
 api_key_header = APIKeyHeader(name=API_KEY_HEADER_NAME, auto_error=True)
 
 
-async def get_api_key(api_key_string: str = Security(api_key_header)):
+async def api_key_valid(api_key_string: str = Security(api_key_header)) -> bool:
 
-    global api_key
-
+    # return
     if api_key is None:
-        return None
+        return True
 
-    if api_key_string == f"Token {api_key}":
-        return api_key
+    if api_key_string == f"{API_KEY_TYPE} {api_key}":
+        return True
     else:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN, detail="API token validation failed"
         )
+
 
 def set_api_key(key: str = None) -> None:
     global api_key

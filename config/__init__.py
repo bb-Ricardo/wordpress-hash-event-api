@@ -15,23 +15,24 @@ from pydantic import ValidationError
 from config.models.app import AppSettings
 from common.log import get_logger
 
-
-
-log = get_logger()
+logger = get_logger()
 
 
 app_settings = AppSettings(hash_kennels="EMPTY")
 
+
 def validate_config_object(config_class, settings):
 
+    settings_object = None
     try:
         settings_object = config_class(**settings)
     except ValidationError as e:
         e = str(e).replace('\n', ": ")
-        log.error(f"Unable to parse config (also check defined env vars): {e}")
+        logger.error(f"Unable to parse config (also check defined env vars): {e}")
         exit(1)
 
     return settings_object
+
 
 def get_config_object(handler, config_class):
 
@@ -45,15 +46,16 @@ def get_config_object(handler, config_class):
     settings_object = validate_config_object(config_class, settings_dict)
 
     for item, value in settings_object:
-                # take care of logging sensitive data
+        # take care of logging sensitive data
         for sensitive_item in ["token", "pass"]:
 
             if sensitive_item.lower() in item.lower() and isinstance(value, str):
                 value = value[0:3] + "***"
 
-        log.debug(f"Config: {config_section}.{item} = {value}")
+        logger.debug(f"Config: {config_section}.{item} = {value}")
 
     return settings_object
+
 
 def get_config_file(config_file):
     """
@@ -103,10 +105,10 @@ def open_config_file(config_file):
     try:
         config_handler.read_file(open(config_file))
     except (configparser.Error, AttributeError) as e:
-        log.warning(f"Problem while config file '{config_file}' parsing: {e}")
+        logger.warning(f"Problem while config file '{config_file}' parsing: {e}")
         return
     except Exception:
-        log.warning(f"Unable to open file '{config_file}'")
+        logger.warning(f"Unable to open file '{config_file}'")
         return
 
     return config_handler
@@ -158,14 +160,14 @@ def get_config(config_handler=None, section=None, valid_settings=None, deprecate
     config_dict = {}
 
     if valid_settings is None:
-        log.error("No valid settings passed to config parser!")
+        logger.error("No valid settings passed to config parser!")
 
     # read specified section section
     if section is None:
         return config_dict
 
     if section not in config_handler.sections():
-        log.error(f"Section '{section}' not found in config_file")
+        logger.error(f"Section '{section}' not found in config_file")
         return config_dict
 
     for config_item, default_value in valid_settings.items():
@@ -178,7 +180,7 @@ def get_config(config_handler=None, section=None, valid_settings=None, deprecate
                 log_text = f"Setting '{deprecated_setting}' is deprecated and will be removed soon."
                 if alternative_setting is not None:
                     log_text += f" Consider changing your config to use the '{alternative_setting}' setting."
-                log.warning(log_text)
+                logger.warning(log_text)
 
     # check for removed settings
     if isinstance(removed_settings, dict):
@@ -188,7 +190,7 @@ def get_config(config_handler=None, section=None, valid_settings=None, deprecate
                            f"but is still defined in config section '{section}'."
                 if alternative_setting is not None:
                     log_text += f" You need to switch to '{alternative_setting}' setting."
-                log.warning(log_text)
+                logger.warning(log_text)
 
     return config_dict
 

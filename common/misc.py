@@ -8,24 +8,9 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from typing import List, Any, Union
-import sys
 import re
 
 from phpserialize import loads, dumps
-
-
-def do_error_exit(log_text: str) -> None:
-    """
-    log an error and exit with return code 1
-
-    Parameters
-    ----------
-    log_text : str
-        the text to log as error
-    """
-
-    print(log_text, file=sys.stderr)
-    exit(1)
 
 
 def format_slug(text: str = None, max_len: int = 50) -> str:
@@ -70,8 +55,8 @@ def split_quoted_string(string_to_split: str, character_to_split_at: str = ",", 
     """
     Split a string but obey quoted parts.
 
-    from: "asdf,asfsdf",sdfds
-    to: ['"asdf,asfsdf"', 'sdfds']
+    from: "first, string", second string
+    to: ['first, string', 'second string']
 
     Parameters
     ----------
@@ -136,13 +121,11 @@ def php_serialize(data: dict) -> Union[str, None]:
     str: serialized string
     """
 
-    if not isinstance(data, dict):
-        return
-
-    # noinspection PyBroadException
-    try:
-        return dumps(data)
-    except Exception:
-        pass
+    if isinstance(data, dict):
+        # noinspection PyBroadException
+        try:
+            return dumps(data).decode("utf-8")
+        except Exception:
+            pass
 
 # EOF

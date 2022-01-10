@@ -9,6 +9,8 @@
 
 # taken from here: https://stackoverflow.com/questions/62934384/how-to-add-timestamp-to-each-request-in-uvicorn-logs
 
+default_log_level = "INFO"
+
 request_logger_config = {
     "version": 1,
     "disable_existing_loggers": False,

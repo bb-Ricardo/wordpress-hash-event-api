@@ -26,7 +26,9 @@ class EnvOverridesBaseSettings(BaseSettings):
     def defaults_dict(cls):
         return {x.name: x.default for x in cls.__fields__.values()}
 
-    class Config:        
+    class Config:
+        env_prefix = ""
+
         @classmethod
         def customise_sources(
             cls,

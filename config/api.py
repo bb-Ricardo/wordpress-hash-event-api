@@ -9,6 +9,7 @@
 
 from pydantic import BaseModel
 
+
 class BasicAPISettings(BaseModel):
     description = 'Hash Run API for wordpress Event Manager'
     title = 'Kennel Runs API'

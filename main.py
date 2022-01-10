@@ -13,21 +13,20 @@ import os
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 
-from config.models.database import DBSettings
 from config.models.api import APIConfigSettings
-from config.models.main import MainConfigSettings
 from config.models.app import AppSettings
+from config.models.database import DBSettings
+from config.models.main import MainConfigSettings
+from config.log import default_log_level, request_logger_config
+from config.api import BasicAPISettings
+import config
+from api.security import api_key_valid, set_api_key
+from api.routers import runs
 from source.database import setup_db_handler
-from api.config import BasicAPISettings
-from api.security import set_api_key, get_api_key
-import common.config as config
-from common.log import setup_logging
 from source.manage_event_fields import update_event_manager_fields
-from routers import runs
-from config.log import request_logger_config
+from common.log import setup_logging
 
 settings_file = "config.ini"
-default_log_level = "INFO"
 log = None
 
 
@@ -128,7 +127,7 @@ def get_app() -> FastAPI:
     # disable API authorization if no token is defined
     if api_settings.token is None:
         log.info("No API token defined, disabling API Authentication")
-        server.dependency_overrides[get_api_key] = lambda: None
+        server.dependency_overrides[api_key_valid] = lambda: None
 
     # add default route redirect to docs
     @server.get("/", include_in_schema=False)

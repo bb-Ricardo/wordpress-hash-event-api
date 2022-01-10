@@ -10,13 +10,11 @@
 from common.misc import php_deserialize, php_serialize, format_slug
 from source.database import get_db_handler
 from common.log import get_logger
-import common.config as config
-from models.run import HashAttributes, HashScope
+import config.__init__ as config
+from api.models.run import HashAttributes, HashScope
 
 
 log = get_logger()
-
-import pprint
 
 
 class HashEventManagerData:
@@ -32,14 +30,14 @@ class HashEventManagerData:
                 "description": "select run attributes",
                 "type": "multiselect",
                 "required": False,
-                "options": {e.value: e.name  for e in HashAttributes}
+                "options": {e.value: e.name for e in HashAttributes}
             },
             "hash_scope": {
                 "label": "Event Promotion",
                 "description": "Select a scope fot this run/event",
                 "type": "select",
                 "required": False,
-                "options": {e.value: e.name  for e in HashScope}
+                "options": {e.value: e.name for e in HashScope}
             },
             "hash_run_number": {
                 "label": "Run Number",
@@ -94,9 +92,9 @@ class HashEventManagerData:
                 "required": False,
                 "type": "number"
             },
-            "hash_extras_description":{
+            "hash_extras_description": {
                 "label": "Hash Cash Extras Description",
-                "description": "What do you Hashers get for the extra buck",
+                "description": "What will other Hashers be provided for the extra buck",
                 "required": False,
                 "type": "text"
             },
@@ -137,6 +135,8 @@ def check_event_manager_version():
 
     conn = get_db_handler()
 
+    supported_version = "3.1.21"
+
     # check installed Event Manager version
     installed_event_manager_version = conn.get_config_item("wp_event_manager_version")
 
@@ -145,18 +145,22 @@ def check_event_manager_version():
         exit(1)
     else:
         log.info(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
-        fersion_supported = False
+        version_supported = False
         # try to compare versions
+        # noinspection PyBroadException
         try:
             version_split = installed_event_manager_version.split(".")
-            if int(version_split[0]) == 3 and int(version_split[1]) >= 1 and int(version_split[2]) >= 21:
-                fersion_supported = True
+            supported_version_split = supported_version.split(".")
+            if int(version_split[0]) == int(supported_version_split[0]) and \
+                    int(version_split[1]) >= int(supported_version_split[1]) and \
+                    int(version_split[2]) >= int(supported_version_split[2]):
+                version_supported = True
         except Exception:
             pass
 
-        if fersion_supported is False:
+        if version_supported is False:
             log.error(f"Wordpress Event Manager version '{installed_event_manager_version}' unsupported. "
-                       "Minimal version needed '3.1.21'. Please update plugin.")
+                      f"Minimal version needed '{supported_version}'. Please update plugin.")
             exit(1)
 
 
@@ -201,17 +205,14 @@ def update_event_manager_fields():
                 update_data = True
                 log.info(f"Updated Event Manager field '{key}' attribute '{a_key}' to '{a_value}'")
 
-
     if update_data is False:
         return True
 
     # update attribute data
     event_manager_form_fields["event"] = event_fields
 
-    # update datbase
-    updated_rows = conn.update_config_item("event_manager_form_fields", 
-        php_serialize(event_manager_form_fields).decode("utf-8")
-    )
+    # update database
+    updated_rows = conn.update_config_item("event_manager_form_fields", php_serialize(event_manager_form_fields))
 
     if updated_rows == 0:
         log.error("Updating Wordpress option 'event_manager_form_fields' failed.")
@@ -219,9 +220,8 @@ def update_event_manager_fields():
 
     log.info("Successfully updated Wordpress option 'event_manager_form_fields'")
 
-    updated_rows = conn.update_config_item("event_manager_submit_event_form_fields", 
-        php_serialize({"event": event_fields}).decode("utf-8")
-    )
+    updated_rows = conn.update_config_item("event_manager_submit_event_form_fields",
+                                           php_serialize({"event": event_fields}))
 
     if updated_rows == 0:
         log.error("Updating Wordpress option 'event_manager_submit_event_form_fields' failed.")
