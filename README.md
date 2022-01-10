@@ -5,17 +5,16 @@
 - [ ] fill README with useful information
 - [x] add filters for most run attributes
 - [x] add API auth
-- [ ] clean up code / linting
+- [x] clean up code / linting
 - [ ] describe setup and installation
-- [ ] add docker file
-- [x] try to add "auto-install", this should setup the Wordpress Event Manager to add all available fields to all events
+- [x] add docker file
+- [x] try to add "auto-install", this should set up the WordPress Event Manager to add all available fields to all events
 - [x] requirements.ini
 - [ ] add OpenRC init script and config to server API via uvicorn
 - [ ] add nginx config example
   - [ ] add CORS Headers to nginx config
 
 
-http://manpages.ubuntu.com/manpages/impish/man1/uvicorn.1.html
 
 ## License
 >You can check out the full license [here](LICENSE.txt)

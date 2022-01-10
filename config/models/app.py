@@ -15,6 +15,7 @@ import pytz
 from common.misc import split_quoted_string
 
 
+# noinspection PyMethodParameters
 class AppSettings(EnvOverridesBaseSettings):
     blogname: str = None
     hash_kennels: Union[str, List]
@@ -40,7 +41,9 @@ class AppSettings(EnvOverridesBaseSettings):
 
     @validator("hash_kennels")
     def split_hash_kennels(cls, value):
-        return split_quoted_string(value, strip=True)
+        if isinstance(value, str):
+            value = split_quoted_string(value, strip=True)
+        return value
 
     @validator("default_kennel")
     def check_default_kennel(cls, value, values):

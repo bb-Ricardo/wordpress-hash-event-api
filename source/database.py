@@ -9,6 +9,7 @@
 
 from datetime import datetime
 from typing import Any, Dict, List, AnyStr, Union
+# noinspection PyPackageRequirements
 import mysql.connector
 from common.log import get_logger
 

@@ -9,7 +9,7 @@
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pytz import UTC
+from pytz import utc
 from enum import Enum
 
 from pydantic import BaseModel, AnyHttpUrl, Field, validator, root_validator
@@ -63,9 +63,10 @@ class HashParams:
     location_name: Optional[str] = None
     limit: Optional[int] = None
 
-    def dict(cls):
-        return {k: v for k, v in cls.__dict__.items() if k != "__initialised__"}
+    def dict(self):
+        return {k: v for k, v in self.__dict__.items() if k != "__initialised__"}
 
+    # noinspection PyMethodParameters
     @root_validator()
     def check_everything(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if set(values.values()) == {None}:
@@ -94,7 +95,7 @@ class HashParams:
                     continue
                 if key.startswith(timestamp_key):
                     try:
-                        values[key] = datetime.fromtimestamp(value, tz=UTC)
+                        values[key] = datetime.fromtimestamp(value, tz=utc)
                     except Exception as e:
                         raise RequestValidationError(loc=["query", key],
                                                      msg=f"parma '{key}' {e}: {value}",
@@ -121,6 +122,7 @@ class HashParams:
         return values
 
 
+# noinspection PyMethodParameters
 class Hash(BaseModel):
     """
         a Hash run/event object

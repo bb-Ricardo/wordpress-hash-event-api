@@ -81,11 +81,11 @@ def get_app() -> FastAPI:
         db_port=db_settings.port
     )
 
-    if conn is not None and conn.session is not None:
-        log.info("Database connection successfully started")
-    else:
+    if conn is None or conn.session is None:
         log.error("Exit due to database connection error")
         exit(1)
+
+    log.info("Database connection successfully started")
 
     # read app settings from config and try to find settings in wordpress db if not defined in config
     app_settings = config.get_config_object(config_handler, AppSettings)

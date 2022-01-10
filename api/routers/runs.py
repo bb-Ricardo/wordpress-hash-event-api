@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from api.security import api_key_valid
 from api.models.run import Hash, HashParams
+from api.models.exceptions import APITokenValidationFailed
 from factory.factory import get_hash_runs
 
 router_runs = APIRouter(
@@ -25,7 +26,7 @@ router_runs = APIRouter(
 async def get_runs(params: HashParams = Depends(HashParams), key_valid: bool = Depends(api_key_valid)):
 
     if key_valid is False:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        raise APITokenValidationFailed
 
     result, error = get_hash_runs(params)
     if error is not None:
@@ -44,8 +45,9 @@ async def get_run(id: int, key_valid: bool = Depends(api_key_valid)):
     """
 
     if key_valid is False:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        raise APITokenValidationFailed
 
+    # noinspection PyArgumentList
     result, error = get_hash_runs(HashParams(id=id))
 
     if error is not None:

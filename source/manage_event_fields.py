@@ -10,9 +10,8 @@
 from common.misc import php_deserialize, php_serialize, format_slug
 from source.database import get_db_handler
 from common.log import get_logger
-import config.__init__ as config
+import config
 from api.models.run import HashAttributes, HashScope
-
 
 log = get_logger()
 
