@@ -65,7 +65,7 @@ All options are described in the example file.
 ## ToDo
 - [x] fix and test db connection timeout
 - [ ] fill README with useful information
-- [ ] describe config
+- [x] describe config
 - [ ] function and class doc strings
 - [x] add filters for most run attributes
 - [x] add API auth

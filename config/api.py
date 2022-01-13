@@ -11,10 +11,10 @@ from pydantic import BaseModel
 
 
 class BasicAPISettings(BaseModel):
-    description = 'Hash Run API for wordpress Event Manager'
+    description = 'Hash Run API for WordPress Event Manager'
     title = 'Kennel Runs API'
     openapi_url = "/openapi.json"
-    root_path = "/"
+    root_path = "/api/v1"
     version = '0.1'
     debug = False
 

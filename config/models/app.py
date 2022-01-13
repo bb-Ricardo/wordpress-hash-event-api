@@ -17,7 +17,6 @@ from common.misc import split_quoted_string
 
 # noinspection PyMethodParameters
 class AppSettings(EnvOverridesBaseSettings):
-    blogname: str = None
     hash_kennels: Union[str, List]
     default_kennel: str = None
     default_hash_cash: int = None
