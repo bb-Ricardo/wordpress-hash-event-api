@@ -1,0 +1,50 @@
+# /etc/conf.d/uvicorn
+# vim: set ft=sh:
+
+###############################################################################
+#    This configuration file defines default options for all uvicorn apis     #
+#                      managed by uvicorn.* runscripts.                       #
+#                                                                             #
+#       Specific configuration for each API should be defined in a file       #
+#                       /etc/conf.d/uvicorn.<API_NAME>.                        #
+###############################################################################
+
+#
+# This is an example configuration for uvicorn runscript. It contain all
+# user-definable variables with their default values. If the default value is
+# suitable for you, then you can omit that variable in your API config.
+#
+
+
+# User to run the uvicorn process.
+#user="nobody"
+
+# Group to run the uvicorn process.
+#group="nobody"
+
+# Where to store the uvicorn process PID.
+#pidfile="/run/uvicorn/${API_NAME}/uvicorn.pid"
+
+# Where to redirect stdout/stderr of the uvicorn process.
+#logfile="/var/log/uvicorn/${API_NAME}.log"
+
+# Is this instance a "development" or a "production" environment
+# will add "--reload" to uvicorn command line if set to "development"
+#environment=production
+
+# The path where this uvicorn api is installed
+#app_path="/var/www/my-api-app"
+
+# The desired app which should be served by uvicorn
+#app_call="main:app"
+
+# The port this uvicorn instance will listen on
+#port="8000"
+
+# Any additional arguments to be passed to uvicorn command.
+# More options here: https://www.uvicorn.org/settings/
+#extra_args=""
+
+# Specify service dependencies. You can use the same directives as in the
+# depend() function, but as variables prefixed by "rc_" (e.g. rc_need, rc_use).
+#rc_need=""

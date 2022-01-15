@@ -1,0 +1,20 @@
+[Unit]
+Description=WordpPress Hash Event API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=nobody
+Group=nogroup
+WorkingDirectory=/opt/wordpress-hash-event-api
+ExecStart=/opt/wordpress-hash-event-api/.venv/bin/uvicorn main:app --port 8001 --proxy-headers
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=wordpress-hash-event-api
+RemainAfterExit=no
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,8 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 import logging
+import psutil
+import os
 
 # define valid log levels
 valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR"]
@@ -40,6 +42,13 @@ def setup_logging(log_level=None):
     """
 
     log_format = '%(asctime)s - %(levelname)s: %(message)s'
+
+    # if app is started via systemd then strip time stamp from log format
+    try:
+        if psutil.Process(psutil.Process(os.getpid()).ppid()).name() == "systemd":
+            log_format = '%(levelname)s: %(message)s'
+    except Exception as e:
+        print(f"unable to determine parent process name: {e}")
 
     if log_level is None or log_level == "":
         print("ERROR: log level undefined or empty. Check config please.")

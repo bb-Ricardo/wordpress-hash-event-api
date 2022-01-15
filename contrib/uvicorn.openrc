@@ -1,0 +1,75 @@
+#!/sbin/openrc-run
+# vim: set ft=sh: ts=4:
+
+API_NAME="${RC_SVCNAME#uvicorn.}"
+
+: ${user:=nobody}
+: ${group:=nobody}
+: ${pidfile:=/run/uvicorn/${API_NAME}/uvicorn.pid}
+: ${logfile:=/var/log/uvicorn/${API_NAME}.log}
+
+: ${environment:=production}
+: ${app_path:=/var/www/my-api-app}
+: ${app_call:=main:app}
+: ${port:=8000}
+: ${extra_args:=}
+
+name="API $API_NAME"
+description="uvicorn FastAPI \"$API_NAME\""
+
+# using find in app_path to find uvicorn bin
+command=""
+
+command_args="${app_call} --app-dir '${app_path}' --port ${port}"
+command_background='yes'
+command_user="$user"
+command_group="$group"
+
+start_stop_daemon_args="--wait=1000 --stdout=$logfile --stderr=$logfile"
+
+depend() {
+	need net
+}
+
+start_pre() {
+	if [ "$RC_SVCNAME" = 'uvicorn' ]; then
+		eerror ''
+		eerror 'You are not supposed to run this runscript directly. Instead, you should'
+		eerror 'create a symlink for the API you want to run as well as a copy of the'
+		eerror 'configuration file and modify it appropriately, like so:'
+		eerror ''
+		eerror '    ln -s uvicorn /etc/init.d/uvicorn.example'
+		eerror '    cp /etc/conf.d/uvicorn /etc/conf.d/uvicorn.example'
+		return 1
+	fi
+
+  command=$(find "${app_path}" -type f -name "uvicorn" 2>/dev/null)
+
+  if [ -z "$command" ]; then
+    eerror ''
+    eerror 'command "uvicorn" not found in app_path "'${app_path}'"'
+    return 1
+  fi
+
+	if [ ! "$environment" = "production"  ]; then
+		command_args="$command_args --reload --reload-dir '${app_path}'"
+	fi
+
+  command_args="$command_args $extra_args"
+
+	local path; for path in "$pidfile" "$logfile"; do
+		# checkpath doesn't create intermediate directories
+		file_dir_path="$(dirname "$path")"
+		mkdir -p "$file_dir_path"
+		[ ! "$file_dir_path" = "/var/log" ] && checkpath -d -m 0755 -o root:root "$file_dir_path"
+		touch "$path"
+		[ ! "$path" = "$pidfile" ] && checkpath -f -m 0640 -o $user:$group "$path"
+	done
+
+	return 0
+}
+
+stop_post() {
+	[ -f "$pidfile" ] && rm -f "$pidfile"
+	return 0
+}
