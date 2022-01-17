@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -12,7 +12,7 @@ from config.models import EnvOverridesBaseSettings
 
 class APIConfigSettings(EnvOverridesBaseSettings):
     token: str = None
-    root_path: str = "/"
+    root_path: str = "/api/v1"
 
     class Config:
         env_prefix = f"{__name__.split('.')[-1]}_"

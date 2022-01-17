@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -15,7 +15,7 @@ class BasicAPISettings(BaseModel):
     title = 'Kennel Runs API'
     openapi_url = "/openapi.json"
     root_path = "/api/v1"
-    version = '0.1'
+    version = '1.0'
     debug = False
 
 # EOF

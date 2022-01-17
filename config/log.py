@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -9,7 +9,22 @@
 
 # taken from here: https://stackoverflow.com/questions/62934384/how-to-add-timestamp-to-each-request-in-uvicorn-logs
 
+import psutil
+import os
+
 default_log_level = "INFO"
+
+run_by_systemd = False
+
+# if app is started via systemd then strip time stamp from log format
+request_logger_config_format = '%(asctime)s - %(levelname)s: %(client_addr)s - "%(request_line)s" %(status_code)s'
+try:
+    if psutil.Process(psutil.Process(os.getpid()).ppid()).name() == "systemd":
+        run_by_systemd = True
+        request_logger_config_format = '%(levelname)s: %(client_addr)s - "%(request_line)s" %(status_code)s'
+except Exception as e:
+    print(f"unable to determine parent process name: {e}")
+
 
 request_logger_config = {
     "version": 1,
@@ -17,7 +32,7 @@ request_logger_config = {
     "formatters": {
         "access": {
             "()": "uvicorn.logging.AccessFormatter",
-            "fmt": '%(asctime)s - %(levelname)s: %(client_addr)s - "%(request_line)s" %(status_code)s',
+            "fmt": request_logger_config_format,
             "use_colors": True
         },
     },

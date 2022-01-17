@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #

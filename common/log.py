@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2021 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -8,8 +8,8 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 import logging
-import psutil
-import os
+
+from config.log import run_by_systemd
 
 # define valid log levels
 valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR"]
@@ -43,12 +43,8 @@ def setup_logging(log_level=None):
 
     log_format = '%(asctime)s - %(levelname)s: %(message)s'
 
-    # if app is started via systemd then strip time stamp from log format
-    try:
-        if psutil.Process(psutil.Process(os.getpid()).ppid()).name() == "systemd":
-            log_format = '%(levelname)s: %(message)s'
-    except Exception as e:
-        print(f"unable to determine parent process name: {e}")
+    if run_by_systemd is True:
+        log_format = '%(levelname)s: %(message)s'
 
     if log_level is None or log_level == "":
         print("ERROR: log level undefined or empty. Check config please.")

@@ -6,6 +6,8 @@ This is aimed at Hash Kennels to announce runs which then can be consumed
 by [Harrier Central](https://www.harriercentral.com)
 
 ## Requirements
+You need to have a running Wordpress site with 'WP Event Manager' Plugin installed.
+
 ### Software
 * python >= 3.6
 * starlette
@@ -20,22 +22,22 @@ by [Harrier Central](https://www.harriercentral.com)
 ### WP Event Manager Plugin
 * WP Event Manager >= 3.1.21
 
-# Installing
+## Installing
 * here we assume we install in ```/opt```
 
-## RedHat based OS
+### RedHat based OS
 * on RedHat/CentOS 7 you need to install python3.6 and pip from EPEL first
 * on RHEL/Rocky Linux 8 systems the package name changed to `python3-pip`
 ```shell
 yum install python36-pip
 ```
 
-## Ubuntu 18.04 & 20.04
+### Ubuntu 18.04 & 20.04
 ```shell
 apt-get update && apt-get install python3-venv
 ```
 
-## Clone repo and install dependencies
+### Clone repo and install dependencies
 * download and setup of virtual environment
 ```shell
 cd /opt
@@ -46,7 +48,7 @@ python3 -m venv .venv
 pip3 install -r requirements.txt || pip install -r requirements.txt
 ```
 
-## Install as systemd service
+### Install as systemd service
 If files have been installed in a different directory then the systemd service file
 needs to be edited.
 
@@ -66,7 +68,7 @@ systemctl start wordpress-hash-event-api
 systemctl enable wordpress-hash-event-api
 ```
 
-## Install as OpenRC service
+### Install as OpenRC service
 The [uvicorn.confd](contrib/uvicorn.confd) config file needs to be copied to `/etc/conf.d/`.
 Let's assume the API is called `nerd-h3`.
 ```shell
@@ -90,7 +92,7 @@ is finished the service can be started.
 rc-update add uvicorn.nerd-h3 default
 ```
 
-## Docker
+### Docker
 
 Run the application in docker container
 
@@ -99,31 +101,36 @@ Run the application in docker container
 
 ```
 docker build -t wordpress-hash-event-api .
-docker run --rm -it -v $(pwd)/config.ini:/app/settings.ini wordpress-hash-event-api
+docker run --rm -it -v $(pwd)/config.ini:/app/config.ini wordpress-hash-event-api
+```
+
+### Nginx as reverse proxy
+In case you want to use Nginx as a reverse proxy you can add following lines
+to your server block configuration. Make sure to adjust your IP and port accordingly.
+```nginx
+        location /api {
+                return 307 /api/v1;
+        }
+        location /api/v1/ {
+                rewrite /api/v1/(.*) /$1  break;
+                proxy_pass http://127.0.0.1:8000;
+                proxy_redirect     off;
+                proxy_set_header   Host              $host;
+                proxy_set_header   X-Real-IP         $remote_addr;
+                # activate to see the actual remote IP and not just your reverse proxy
+                # attention: in Europe this has implications on your GDPR statements on your page
+                #            as you log IP addresses.
+                #proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+                #proxy_set_header   X-Forwarded-Proto $scheme;
+        }
 ```
 
 ## Setup
 Copy the [config-example.ini](config-example.ini) sample settings file to `config.ini`.
 All options are described in the example file.
 
-
-## ToDo
-- [x] fix and test db connection timeout
-- [ ] fill README with useful information
-- [x] describe config
-- [ ] function and class doc strings
-- [x] add filters for most run attributes
-- [x] add API auth
-- [x] clean up code / linting
-- [x] describe setup and installation
-- [x] add docker file
-- [x] try to add "auto-install", this should set up the WordPress Event Manager to add all available fields to all events
-- [x] requirements.ini
-- [x] add OpenRC init script and config to server API via uvicorn
-- [ ] add nginx config example
-  - [ ] add CORS Headers to nginx config
-
-
+After starting the API the first time it will add additional fields to each event.
+Such as a choice for the hosting Kennel or amount of Hash Cash.
 
 
 ## License
