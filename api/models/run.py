@@ -146,8 +146,8 @@ class Hash(BaseModel):
     hares: Optional[str] = Field(None, description="Name of the runs hares")
 
     contact: Optional[str] = Field(None, description="phone number or email of a contact")
-    geo_lat: Optional[str] = Field(None, description="geo location latitude")
-    geo_long: Optional[str] = Field(None, description="geo location longitude")
+    geo_lat: Optional[float] = Field(None, description="geo location latitude")
+    geo_long: Optional[float] = Field(None, description="geo location longitude")
     geo_location_name: Optional[str] = Field(None, description="geo location name/address")
     geo_map_url: Optional[AnyHttpUrl] = Field(None, description="a url to the location")
     location_name: Optional[str] = Field(None, description="name of the location")
