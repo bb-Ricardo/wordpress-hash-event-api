@@ -128,17 +128,17 @@ class DBConnection:
 
         return self.execute_select_query(query)
 
-    def get_posts_meta(self, post_id: int = None) -> List[Dict]:
+    def get_posts_meta(self, post_ids: List[int] = None) -> List[Dict]:
         query = "SELECT * FROM `wp_postmeta`"
-        if post_id is not None:
-            query += f" WHERE post_id = {post_id}"
+        if isinstance(post_ids, list):
+            query += f" WHERE `post_id` IN ({','.join(post_ids)})"
 
         return self.execute_select_query(query)
 
     def get_users(self, user_id: int = None) -> List[Dict]:
         query = "SELECT id, display_name FROM `wp_users`"
         if user_id is not None:
-            query += f" WHERE id = {user_id}"
+            query += f" WHERE `id` = {user_id}"
 
         return self.execute_select_query(query)
 

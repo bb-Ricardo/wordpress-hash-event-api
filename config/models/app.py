@@ -20,6 +20,7 @@ class AppSettings(EnvOverridesBaseSettings):
     hash_kennels: Union[str, List]
     default_kennel: str = None
     default_hash_cash: int = None
+    default_hash_cash_non_members: int = None
     timezone_string: str = None
     default_currency: str = None
     default_facebook_group_id: int = None

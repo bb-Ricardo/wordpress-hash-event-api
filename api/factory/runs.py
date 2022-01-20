@@ -60,7 +60,7 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
 def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
 
     def compare_attributes(value_a, value_b):
-        print(type(value_a) + "==" + type(value_b))
+
         if type(value_a) == type(value_b):
             if "__gt" in key and value_b > value_a:
                 return True
@@ -130,11 +130,17 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
     
     posts = conn.get_posts(**post_query_data)
 
-    post_meta = conn.get_posts_meta(params.id)
+    return_list = list()
+    if isinstance(posts, list):
+        post_ids = [post.get("id") for post in posts]
+    else:
+        log.error(f"DB query should return a list, got {type(posts)}")
+        return return_list
+
+    post_meta = conn.get_posts_meta(post_ids)
     event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_submit_event_form_fields"))
 
-    return_list = list()
-    for post in posts or list():
+    for post in posts:
 
         post_attr = {x.get("meta_key"): x.get("meta_value") for x in
                      [d for d in post_meta
@@ -156,10 +162,12 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             "kennel_name": config.app_settings.default_kennel,
             "event_description": post.get("post_content"),
             "event_type": post.get("post_category") or "Regular Run",
+            "event_geographic_scope": HashScope.Unspecified,
             "start_date": post_attr.get("_event_start_date"),
             "end_date": post_attr.get("_event_end_date"),
             "run_number": post_attr.get("_hash_run_number"),
             "run_is_counted": True,
+            "deleted": True,
             "hares": post_attr.get("_hash_hares"),
             "contact": post_attr.get("_hash_contact"),
             "geo_lat": post_attr.get("geolocation_lat"),
@@ -169,7 +177,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             "location_additional_info": post_attr.get("_hash_location_specifics"),
             "facebook_group_id": config.app_settings.default_facebook_group_id,
             "hash_cash_members": config.app_settings.default_hash_cash,
-            "hash_cash_non_members": config.app_settings.default_hash_cash,
+            "hash_cash_non_members": config.app_settings.default_hash_cash_non_members,
             "event_currency": config.app_settings.default_currency,
             "hash_cash_extras": post_attr.get("_hash_cash_extras"),
             "extras_description": post_attr.get("_hash_extras_description"),
@@ -193,8 +201,6 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         # only published and expired events count as not deleted
         if post.get("post_status") in ["publish", "expired"] and post_attr.get("_cancelled") == "0":
             hash_data["deleted"] = False
-        else:
-            hash_data["deleted"] = True
 
         # update hash cash if present
         if post_attr.get("_hash_cash") is not None and len(str(post_attr.get("_hash_cash"))) > 0:
@@ -204,7 +210,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
                 len(str(post_attr.get("_hash_cash_non_members"))) > 0:
 
             hash_data["hash_cash_non_members"] = post_attr.get("_hash_cash_non_members")
-        else:
+        elif hash_data.get("hash_cash_non_members") is not None:
             hash_data["hash_cash_non_members"] = hash_data.get("hash_cash_members")
 
         # get event url and unescape the link
@@ -229,8 +235,6 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         event_geographic_scope = post_attr.get("_hash_scope")
         if event_geographic_scope is not None and event_geographic_scope in [e.value for e in HashScope]:
             hash_data["event_geographic_scope"] = event_geographic_scope
-        else:
-            hash_data["event_geographic_scope"] = HashScope.Unspecified
 
         # get event attributes
         event_attributes = get_event_manager_field_data(
