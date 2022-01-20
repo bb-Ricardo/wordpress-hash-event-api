@@ -129,6 +129,12 @@ to your server block configuration. Make sure to adjust your IP and port accordi
 Copy the [config-example.ini](config-example.ini) sample settings file to `config.ini`.
 All options are described in the example file.
 
+### Order
+1. Install WordPress
+2. Install [WordPress Event Manager Plugin](https://wordpress.org/plugins/wp-event-manager/)
+3. Edit Event Form Fields at least once
+4. Start API
+
 After starting the API the first time it will add additional fields to each event.
 Such as a choice for the hosting Kennel or amount of Hash Cash.
 
