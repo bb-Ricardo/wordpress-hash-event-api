@@ -18,12 +18,12 @@ log = get_logger()
 
 class HashEventManagerData:
 
-    filed_data = None
+    field_data = None
     default_field_updates = None
 
     def __init__(self):
 
-        self.filed_data = {
+        self.field_data = {
             "hash_attributes": {
                 "label": "Attributes",
                 "description": "select run attributes",
@@ -67,7 +67,7 @@ class HashEventManagerData:
             "hash_cash_non_members": {
                 "label": "Hash Cash Non Members",
                 "description": 'Amount of Hash Cash which are visiting or not members of this kennel',
-                "placeholder": config.app_settings.default_hash_cash or "",
+                "placeholder": config.app_settings.default_hash_cash_non_members or "",
                 "type": "number",
                 "required": False
             },
@@ -115,17 +115,20 @@ class HashEventManagerData:
                 "required": "0",
             },
             "hash_attributes": {
-                "options": self.filed_data.get("hash_attributes").get("options")
+                "options": self.field_data.get("hash_attributes").get("options")
             },
             "hash_scope": {
-                "options": self.filed_data.get("hash_scope").get("options")
+                "options": self.field_data.get("hash_scope").get("options")
             },
             "hash_cash": {
-                "placeholder": self.filed_data.get("hash_cash").get("placeholder")
+                "placeholder": self.field_data.get("hash_cash").get("placeholder")
+            },
+            "hash_cash_non_members": {
+                "placeholder": self.field_data.get("hash_cash_non_members").get("placeholder")
             },
             "hash_kennel": {
-                "options": self.filed_data.get("hash_kennel").get("options"),
-                "default": self.filed_data.get("hash_kennel").get("default")
+                "options": self.field_data.get("hash_kennel").get("options"),
+                "default": self.field_data.get("hash_kennel").get("default")
             }
         }
 
@@ -184,7 +187,7 @@ def update_event_manager_fields():
     update_data = False
 
     # Add new fields
-    for key, attributes in event_manager_patch_data.filed_data.items():
+    for key, attributes in event_manager_patch_data.field_data.items():
 
         if event_fields.get(key) is None:
 

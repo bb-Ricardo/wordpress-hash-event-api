@@ -131,7 +131,7 @@ class DBConnection:
     def get_posts_meta(self, post_ids: List[int] = None) -> List[Dict]:
         query = "SELECT * FROM `wp_postmeta`"
         if isinstance(post_ids, list):
-            query += f" WHERE `post_id` IN ({','.join(post_ids)})"
+            query += f" WHERE `post_id` IN ({','.join(map(str, post_ids))})"
 
         return self.execute_select_query(query)
 

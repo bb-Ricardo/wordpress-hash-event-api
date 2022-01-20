@@ -127,7 +127,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
     elif params.last_update__gt is not None:
         post_query_data["last_update"] = params.last_update__gt
         post_query_data["compare_type"] = "gt"
-    
+
     posts = conn.get_posts(**post_query_data)
 
     return_list = list()
@@ -205,12 +205,12 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         # update hash cash if present
         if post_attr.get("_hash_cash") is not None and len(str(post_attr.get("_hash_cash"))) > 0:
             hash_data["hash_cash_members"] = post_attr.get("_hash_cash")
-        
+
         if post_attr.get("_hash_cash_non_members") is not None and \
                 len(str(post_attr.get("_hash_cash_non_members"))) > 0:
 
             hash_data["hash_cash_non_members"] = post_attr.get("_hash_cash_non_members")
-        elif hash_data.get("hash_cash_non_members") is not None:
+        elif hash_data.get("hash_cash_non_members") is None:
             hash_data["hash_cash_non_members"] = hash_data.get("hash_cash_members")
 
         # get event url and unescape the link
