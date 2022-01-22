@@ -29,7 +29,10 @@ class HashEventManagerData:
                 "description": "select run attributes",
                 "type": "multiselect",
                 "required": False,
-                "options": {e.value: e.name for e in HashAttributes}
+                "options": {e.value: e.name for e in HashAttributes},
+
+                # currently not implemented in WP Event manager
+                # "default": config.app_settings.default_run_attributes
             },
             "hash_scope": {
                 "label": "Event Promotion",
@@ -77,7 +80,9 @@ class HashEventManagerData:
                 "type": "select",
                 "required": False,
                 "options": {format_slug(x): x for x in config.app_settings.hash_kennels},
-                "default": format_slug(config.app_settings.default_kennel or "")
+
+                # currently not implemented in WP Event manager
+                # "default": format_slug(config.app_settings.default_kennel or "")
             },
             "hash_location_specifics": {
                 "label": "Location Specifics",
@@ -116,6 +121,10 @@ class HashEventManagerData:
             },
             "hash_attributes": {
                 "options": self.field_data.get("hash_attributes").get("options")
+
+                # currently not implemented in WP Event manager
+                # "default": self.field_data.get("hash_attributes").get("default")
+
             },
             "hash_scope": {
                 "options": self.field_data.get("hash_scope").get("options")
@@ -127,8 +136,10 @@ class HashEventManagerData:
                 "placeholder": self.field_data.get("hash_cash_non_members").get("placeholder")
             },
             "hash_kennel": {
-                "options": self.field_data.get("hash_kennel").get("options"),
-                "default": self.field_data.get("hash_kennel").get("default")
+                "options": self.field_data.get("hash_kennel").get("options")
+
+                # currently not implemented in WP Event manager
+                # "default": self.field_data.get("hash_kennel").get("default")
             }
         }
 
@@ -196,7 +207,7 @@ def update_event_manager_fields():
             current_field_priority += 1
             update_data = True
             log.info(f"Added new field '{key}' to Event Manager")
-    
+
     # check for changed fields
     for key, attributes in event_manager_patch_data.default_field_updates.items():
 

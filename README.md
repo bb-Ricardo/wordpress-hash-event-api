@@ -132,8 +132,9 @@ All options are described in the example file.
 ### Order
 1. Install WordPress
 2. Install [WordPress Event Manager Plugin](https://wordpress.org/plugins/wp-event-manager/)
-3. Edit Event Form Fields at least once
+3. Edit event form fields at least once
 4. Start API
+5. Define event types which will be exposed as "event_type" for a run, like "Regular Run" or "Christmas Run"
 
 After starting the API the first time it will add additional fields to each event.
 Such as a choice for the hosting Kennel or amount of Hash Cash.

@@ -103,12 +103,20 @@ class DBConnection:
         if last_update is not None and not isinstance(last_update, datetime):
             raise ValueError(f"attribute 'last_update' must be of type 'datetime' got: {type(last_update)}")
 
-        query = "SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, " \
-                "wp_t.name as post_category " \
-                "FROM wp_posts as p " \
-                "LEFT JOIN wp_term_relationships as t ON p.id = t.object_id " \
-                "LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id " \
-                "WHERE p.post_type = 'event_listing'"
+        wordpress_post_type = "event_listing"
+        worpdress_taxonomy_type = "event_listing_type"
+        query = f"""
+                SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, event_type.name as post_type
+                FROM wp_posts as p
+                LEFT JOIN (
+                    SELECT t.object_id, wp_t.name
+                    FROM  wp_term_relationships as t
+                    LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id
+                    LEFT OUTER JOIN wp_term_taxonomy as wp_tax ON t.term_taxonomy_id = wp_tax.term_taxonomy_id
+                    WHERE wp_tax.taxonomy = '{worpdress_taxonomy_type}'
+                ) event_type ON event_type.object_id = p.id WHERE p.post_type = '{wordpress_post_type}'
+                """
+
         if post_id is not None:
             query += f" AND p.id = {post_id}"
 

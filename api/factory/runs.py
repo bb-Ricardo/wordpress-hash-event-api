@@ -161,7 +161,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             "event_name": post.get("post_title"),
             "kennel_name": config.app_settings.default_kennel,
             "event_description": post.get("post_content"),
-            "event_type": post.get("post_category") or "Regular Run",
+            "event_type": post.get("post_type") or config.app_settings.default_run_type,
             "event_geographic_scope": HashScope.Unspecified,
             "start_date": post_attr.get("_event_start_date"),
             "end_date": post_attr.get("_event_end_date"),

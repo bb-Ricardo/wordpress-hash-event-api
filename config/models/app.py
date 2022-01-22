@@ -18,12 +18,16 @@ from common.misc import split_quoted_string
 # noinspection PyMethodParameters
 class AppSettings(EnvOverridesBaseSettings):
     hash_kennels: Union[str, List]
-    default_kennel: str = None
     default_hash_cash: int = None
     default_hash_cash_non_members: int = None
-    timezone_string: str = None
+    default_run_type: str = "Regular Run"
     default_currency: str = None
     default_facebook_group_id: int = None
+    timezone_string: str = None
+
+    # currently not implemented in WP Event manager
+    # default_kennel: str = None
+    # default_run_attributes: Union[str, List] = None
 
     class Config:
         env_prefix = f"{__name__.split('.')[-1]}_"
@@ -45,6 +49,14 @@ class AppSettings(EnvOverridesBaseSettings):
             value = split_quoted_string(value, strip=True)
         return value
 
+    """
+    # currently not implemented in WP Event manager
+    @validator("default_run_attributes")
+    def split_run_attributes(cls, value):
+        if isinstance(value, str):
+            value = split_quoted_string(value, strip=True)
+        return value
+
     @validator("default_kennel")
     def check_default_kennel(cls, value, values):
         if value is None:
@@ -54,3 +66,4 @@ class AppSettings(EnvOverridesBaseSettings):
             raise ValueError(f"Hash kennel '{value}' must be in list of 'hash_kennels': {values.get('hash_kennels')}")
 
         return value
+    """
