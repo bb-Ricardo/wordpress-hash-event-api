@@ -17,11 +17,12 @@ from config.models.api import APIConfigSettings
 from config.models.app import AppSettings
 from config.models.database import DBSettings
 from config.models.main import MainConfigSettings
+from listmonk.handler import ListMonkHandler, ListMonkSettings
 from config.log import default_log_level, request_logger_config
 from config.api import BasicAPISettings
 import config
 from api.security import api_key_valid, set_api_key
-from api.routers import runs
+from api.routers import runs, send_newsletter
 from source.database import setup_db_handler
 from source.manage_event_fields import update_event_manager_fields
 from common.log import setup_logging
@@ -106,6 +107,12 @@ def get_app() -> FastAPI:
     # update event manager fields in database
     update_event_manager_fields()
 
+    # initialize listmonk
+    listmonk_settings = config.get_config_object(config_handler, ListMonkSettings)
+
+    if listmonk_settings.enabled is True:
+        ListMonkHandler(listmonk_settings)
+
     # initialize FastAPI app
     # parse api settings from config
     api_settings = config.get_config_object(config_handler, APIConfigSettings)
@@ -140,6 +147,10 @@ def get_app() -> FastAPI:
 
     # add runs routes
     server.include_router(runs.router_runs)
+
+    if listmonk_settings.enabled is True:
+        # add newsletter post route
+        server.include_router(send_newsletter.newsletter)
 
     return server
 

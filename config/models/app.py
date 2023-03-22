@@ -32,6 +32,12 @@ class AppSettings(EnvOverridesBaseSettings):
     class Config:
         env_prefix = f"{__name__.split('.')[-1]}_"
 
+    def __init__(self, *args, **kwargs):
+
+        if kwargs.get("timezone_string"):
+            kwargs["timezone_string"] = str(kwargs.get("timezone_string"))
+        super().__init__(*args, **kwargs)
+
     @validator("timezone_string")
     def check_time_zone_string(cls, value):
         if value is None:

@@ -137,6 +137,9 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         log.error(f"DB query should return a list, got {type(posts)}")
         return return_list
 
+    if len(posts) == 0:
+        return return_list
+
     post_meta = conn.get_posts_meta(post_ids)
     event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_submit_event_form_fields"))
 

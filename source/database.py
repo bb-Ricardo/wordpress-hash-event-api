@@ -76,6 +76,22 @@ class DBConnection:
 
         return list()
 
+    def execute_insert_query(self, query: str) -> List[Dict]:
+        log.debug(f"Performing DB query: {query}")
+
+        if self.session is None or self.session.is_connected() is not True:
+            self.init_session()
+
+        try:
+            cursor = self.session.cursor(dictionary=True)
+            cursor.execute(query)
+            self.session.commit()
+        except mysql.connector.Error as e:
+            self.session.rollback()
+            log.error(f"DB error occurred: {e}")
+
+        return list()
+
     def execute_update_query(self, query: str, content: Any) -> int:
         log.debug(f"Performing DB query: {query}")
 
@@ -104,7 +120,7 @@ class DBConnection:
             raise ValueError(f"attribute 'last_update' must be of type 'datetime' got: {type(last_update)}")
 
         wordpress_post_type = "event_listing"
-        worpdress_taxonomy_type = "event_listing_type"
+        wordpress_taxonomy_type = "event_listing_type"
         query = f"""
                 SELECT p.id, p.post_content, p.post_title, p.post_modified, p.post_status, p.guid, event_type.name as post_type
                 FROM wp_posts as p
@@ -113,7 +129,7 @@ class DBConnection:
                     FROM  wp_term_relationships as t
                     LEFT JOIN wp_terms as wp_t ON t.term_taxonomy_id = wp_t.term_id
                     LEFT OUTER JOIN wp_term_taxonomy as wp_tax ON t.term_taxonomy_id = wp_tax.term_taxonomy_id
-                    WHERE wp_tax.taxonomy = '{worpdress_taxonomy_type}'
+                    WHERE wp_tax.taxonomy = '{wordpress_taxonomy_type}'
                 ) event_type ON event_type.object_id = p.id WHERE p.post_type = '{wordpress_post_type}'
                 """
 
@@ -143,10 +159,30 @@ class DBConnection:
 
         return self.execute_select_query(query)
 
+    def add_post_meta(self, post_id, meta_key, meta_value):
+        query = "INSERT INTO `wp_postmeta` " \
+                        "( `post_id`,   `meta_key`,   `meta_value`) " \
+                f"VALUES ('{post_id}', '{meta_key}', '{meta_value}')"
+
+        return self.execute_insert_query(query)
+
+    def update_post_meta(self, post_id, meta_key, meta_value):
+        query = "UPDATE `wp_postmeta` SET `meta_value`=%s WHERE " \
+                f"`wp_postmeta`.`post_id` = '{post_id}' AND `wp_postmeta`.`meta_key` = '{meta_key}'"
+
+        return self.execute_update_query(query, meta_value)
+
     def get_users(self, user_id: int = None) -> List[Dict]:
         query = "SELECT id, display_name FROM `wp_users`"
         if user_id is not None:
             query += f" WHERE `id` = {user_id}"
+
+        return self.execute_select_query(query)
+
+    def get_usermeta(self, user_id: int = None) -> List[Dict]:
+        query = "SELECT * FROM `wp_usermeta`"
+        if user_id is not None:
+            query += f" WHERE `user_id` = {user_id}"
 
         return self.execute_select_query(query)
 
