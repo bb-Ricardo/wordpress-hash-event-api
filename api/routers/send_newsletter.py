@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from time import time
 
 from api.models.run import HashParams
-from api.models.send_newsletter import SendNewsletterParams
+from api.models.send_newsletter import SendNewsletterParams, ListmonkReturnDataList
 from api.models.exceptions import CredentialsInvalid
 from api.factory.runs import get_hash_runs
 from source.database import get_db_handler
@@ -30,7 +30,8 @@ newsletter = APIRouter(
 
 
 # noinspection PyShadowingBuiltins
-@newsletter.post("/{post_id}", summary="post run", description="post run via newsletter")
+@newsletter.post("/{post_id}", response_model=ListmonkReturnDataList, summary="post run",
+                 description="post run via newsletter")
 async def get_run(post_id: int, params: SendNewsletterParams):
     """
         To post/update a run to listmonk
@@ -127,11 +128,14 @@ async def get_run(post_id: int, params: SendNewsletterParams):
         "name": f"{subject_prefix}{event.event_name}",
         "subject": f"{subject_prefix}[{event.kennel_name}] Run #{event.run_number}, "
                    f"{event.start_date:%A %d %B %Y, %H:%M} @ {event.location_name}",
-        "lists": [listmonk_handler.config.list_id],
+        "lists": listmonk_handler.config.list_ids,
         "type": "regular",
         "content_type": "html",
         "body": campaign_body
     }
+
+    if listmonk_handler.config.campaign_template_id is not None:
+        campaign_data["template_id"] = listmonk_handler.config.campaign_template_id
 
     # create listmonk campaign
     campaign_result = listmonk_handler.add_campaign(campaign_data)
@@ -142,10 +146,11 @@ async def get_run(post_id: int, params: SendNewsletterParams):
     campaign_id = grab(campaign_result, "data.id")
 
     # send campaign
-    campaign_running_result = listmonk_handler.set_campaign_status(campaign_id, "running")
+    if listmonk_handler.config.send_campaign is True:
+        campaign_result = listmonk_handler.set_campaign_status(campaign_id, "running")
 
-    if campaign_running_result is None:
-        raise HTTPException(status_code=503, detail=f"Upstream request failed, unable to start campaign")
+        if campaign_result is None:
+            raise HTTPException(status_code=503, detail=f"Upstream request failed, unable to start campaign")
 
     # write campaign id to WP database
     if post_campaign_id is not None:
@@ -153,6 +158,6 @@ async def get_run(post_id: int, params: SendNewsletterParams):
     else:
         db_handler.add_post_meta(post_id, "listmonk_campaign_id", campaign_id)
 
-    return {"status": "ok"}
+    return ListmonkReturnDataList(**campaign_result)
 
 # EOF
