@@ -12,14 +12,17 @@ from datetime import datetime
 from pytz import utc
 from enum import Enum
 
-from pydantic import BaseModel, AnyHttpUrl, Field, validator, root_validator
+from pydantic import BaseModel, AnyHttpUrl, Field, validator, root_validator, ValidationError
 from pydantic.dataclasses import dataclass
 from fastapi import Query
 from fastapi.exceptions import RequestValidationError
 
 from config.hash import hash_attributes, hash_scope
 from common.misc import format_slug
+from common.log import get_logger
 from api.models.exceptions import RequestValidationError
+
+log = get_logger()
 
 
 # generate from config.hash lists
@@ -173,6 +176,21 @@ class Hash(BaseModel):
     def set_empty_strings_to_none(cls, value):
         if isinstance(value, str) and len(value.strip()) == 0:
             return None
+        return value
+
+    @validator("geo_map_url", always=True, pre=True)
+    def loose_type_geo_map_url(cls, value):
+        class SelfValidate(BaseModel):
+            url: AnyHttpUrl
+
+        if value is None:
+            return
+        try:
+            SelfValidate(url=value)
+        except ValidationError as e:
+            log.warning(f"Issues while validating 'geo_map_url' value '{value}': {e.errors()[0].get('msg')}")
+            return
+
         return value
 
 # EOF

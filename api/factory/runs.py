@@ -176,6 +176,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             "geo_lat": post_attr.get("geolocation_lat"),
             "geo_long": post_attr.get("geolocation_long"),
             "geo_location_name": post_attr.get("geolocation_formatted_address"),
+            "geo_map_url": post_attr.get("_hash_geo_map_url"),
             "location_name": post_attr.get("_event_location"),
             "location_additional_info": post_attr.get("_hash_location_specifics"),
             "facebook_group_id": config.app_settings.default_facebook_group_id,
@@ -245,6 +246,15 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
 
         if event_attributes is not None and isinstance(event_attributes, list):
             hash_data["event_attributes"] = event_attributes
+
+        # handle geo_map_url
+        if post_attr.get("geo_map_url") is None and \
+                post_attr.get("geo_lat") is not None and post_attr.get("geo_long") is not None:
+
+            hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
+                lat=post_attr.get("geo_lat"),
+                long=post_attr.get("geo_long")
+            )
 
         # parse event data
         try:

@@ -9,10 +9,15 @@
 
 from typing import Union, List
 from config.models import EnvOverridesBaseSettings
-from pydantic import validator
+from pydantic import validator, AnyHttpUrl
 import pytz
 
 from common.misc import split_quoted_string
+from common.log import get_logger
+
+log = get_logger()
+
+maps_url_template = "https://www.google.com/maps/search/?api=1&query={lat},{long}"
 
 
 # noinspection PyMethodParameters
@@ -24,6 +29,7 @@ class AppSettings(EnvOverridesBaseSettings):
     default_currency: str = None
     default_facebook_group_id: int = None
     timezone_string: str = None
+    maps_url_template: AnyHttpUrl = maps_url_template
 
     # currently not implemented in WP Event manager
     # default_kennel: str = None
@@ -53,6 +59,17 @@ class AppSettings(EnvOverridesBaseSettings):
     def split_hash_kennels(cls, value):
         if isinstance(value, str):
             value = split_quoted_string(value, strip=True)
+        return value
+
+    @validator("maps_url_template")
+    def check_maps_url_formatting(cls, value):
+
+        try:
+            value.format(lat=123, long=456)
+        except KeyError as e:
+            log.error(f"Unable to parse 'maps_url_template' formatting, KeyError: {e}. Using default value.")
+            return maps_url_template
+
         return value
 
     """
