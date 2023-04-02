@@ -248,12 +248,12 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             hash_data["event_attributes"] = event_attributes
 
         # handle geo_map_url
-        if post_attr.get("geo_map_url") is None and \
-                post_attr.get("geo_lat") is not None and post_attr.get("geo_long") is not None:
+        if hash_data.get("geo_map_url") is None and \
+                hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
 
             hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
-                lat=post_attr.get("geo_lat"),
-                long=post_attr.get("geo_long")
+                lat=hash_data.get("geo_lat"),
+                long=hash_data.get("geo_long")
             )
 
         # parse event data
