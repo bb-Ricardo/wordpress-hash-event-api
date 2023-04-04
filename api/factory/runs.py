@@ -137,6 +137,9 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         log.error(f"DB query should return a list, got {type(posts)}")
         return return_list
 
+    if len(posts) == 0:
+        return return_list
+
     post_meta = conn.get_posts_meta(post_ids)
     event_manager_form_fields = php_deserialize(conn.get_config_item("event_manager_submit_event_form_fields"))
 
@@ -173,6 +176,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             "geo_lat": post_attr.get("geolocation_lat"),
             "geo_long": post_attr.get("geolocation_long"),
             "geo_location_name": post_attr.get("geolocation_formatted_address"),
+            "geo_map_url": post_attr.get("_hash_geo_map_url"),
             "location_name": post_attr.get("_event_location"),
             "location_additional_info": post_attr.get("_hash_location_specifics"),
             "facebook_group_id": config.app_settings.default_facebook_group_id,
@@ -242,6 +246,15 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
 
         if event_attributes is not None and isinstance(event_attributes, list):
             hash_data["event_attributes"] = event_attributes
+
+        # handle geo_map_url
+        if hash_data.get("geo_map_url") is None and \
+                hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
+
+            hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
+                lat=hash_data.get("geo_lat"),
+                long=hash_data.get("geo_long")
+            )
 
         # parse event data
         try:

@@ -25,3 +25,11 @@ class APITokenValidationFailed(HTTPException):
     """
     def __init__(self):
         super().__init__(status_code=HTTP_403_FORBIDDEN, detail="API token validation failed")
+
+
+class CredentialsInvalid(HTTPException):
+    """
+        return a forbidden due to wrong API token
+    """
+    def __init__(self):
+        super().__init__(status_code=HTTP_403_FORBIDDEN, detail="Credentials invalid")

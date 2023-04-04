@@ -139,6 +139,82 @@ All options are described in the example file.
 After starting the API the first time it will add additional fields to each event.
 Such as a choice for the hosting Kennel or amount of Hash Cash.
 
+## Listmonk support to post event
+It is possible to post an event directly to via [Listmonk](https://github.com/knadh/listmonk) to a mailing list.
+
+### Requirements
+* a running listmonk instance
+* WordPress Advanced Custom Fields plugin
+* Wordpress WPCode Plugin
+
+First both WordPress plugins should be installed.
+
+Using the `Advanced Custom Fields` we add a new Field Group `Run Announcement`. There we add a new field `Mailing List`.
+* Type: Message
+* Label: Mailing List
+* Name: mailing_list
+* Message:
+```
+<div>
+<button
+    id="send-to-mailing-list-button"
+    type="button"
+    class="button-secondary send-to-mailing-list-button"
+    id="refresh-cache">Send/Update Event to Mailing List
+</button>
+</div>
+  ```
+
+In the bottom we can find `Settings`.
+* Rules:
+  1. Post Typ
+  2. is equal to
+  3. Event
+* Representation:
+  1. Style: Standard
+  2. Position: Side
+  3. Label Placement: Top
+  4. Instruction placement: Below
+  5. Order No: 2
+
+* Now press `Save Changes`
+
+After that we switch to the `WPCode` plugin and a Javascript function to this button we just created.
+Here we add a new `Send Mailinglist` code snippet of type `PHP Snipet` with this content:
+```php
+/* Inline script printed out in the header */
+add_action('admin_footer', 'tutsplus_add_script_wp_head');
+function tutsplus_add_script_wp_head() {
+    ?>
+		<script id="updateMailingList" type="text/javascript">
+			document.querySelector( '.send-to-mailing-list-button' ).addEventListener( 'click', function( e ) {
+				var xhttp = new XMLHttpRequest();
+				var params = {
+					user: "<?php echo get_current_user_id(); ?>",
+					token: "<?php echo wp_get_session_token(); ?>"
+				}
+
+				xhttp.onreadystatechange = function() {
+					if (this.readyState == 4 && this.status == 200) {
+					    console.log(this.responseText);
+					}
+				};
+
+			    xhttp.open("POST", "/api/v1/send-newsletter/<?php echo get_the_ID(); ?>" , true);
+				xhttp.setRequestHeader('Content-type', 'application/json')
+
+			    xhttp.send(JSON.stringify(params));
+				xhttp.onload = function() {
+                    // Do whatever with response
+                        alert("Mailing List request status: " + xhttp.responseText)
+                }
+
+			} );
+		</script>
+    <?php
+}
+```
+With Listmonk running on the same hos, sending an event via Mailing list is just a button press away.
 
 ## License
 >You can check out the full license [here](LICENSE.txt)

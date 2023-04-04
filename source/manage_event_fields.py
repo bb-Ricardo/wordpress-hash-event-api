@@ -107,6 +107,12 @@ class HashEventManagerData:
                 "description": "Hide event from exposure on consumer site (Harrier Central)",
                 "required": False,
                 "type": "checkbox"
+            },
+            "hash_geo_map_url": {
+                "label": "Maps Location URL",
+                "description": "Add an maps URL with a specific location",
+                "required": False,
+                "type": "url"
             }
         }
 
