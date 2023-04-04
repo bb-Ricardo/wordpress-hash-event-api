@@ -112,7 +112,7 @@ class HashEventManagerData:
                 "label": "Maps Location URL",
                 "description": "Add an maps URL with a specific location",
                 "required": False,
-                "type": "text"
+                "type": "url"
             }
         }
 

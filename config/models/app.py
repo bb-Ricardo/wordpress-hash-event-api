@@ -17,7 +17,7 @@ from common.log import get_logger
 
 log = get_logger()
 
-maps_url_template = "https://www.google.com/maps/search/?api=1&query={lat},{long}"
+maps_url_template = "https://www.openstreetmap.org/?mlat={lat}&mlon={long}#map=17/{lat}/{long}"
 
 
 # noinspection PyMethodParameters
