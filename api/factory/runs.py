@@ -73,6 +73,11 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
 
     matches = list()
     for key, value in params.dict().items():
+
+        # skip unsupported keys like: __pydantic_initialised__
+        if key.startswith("__"):
+            continue
+
         if value is None or key in ["id", "limit"]:
             continue
 
