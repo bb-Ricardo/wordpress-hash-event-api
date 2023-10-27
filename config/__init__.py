@@ -13,12 +13,14 @@ import os
 from pydantic import ValidationError
 
 from config.models.app import AppSettings
+from config.models.calendar import CalendarConfigSettings
 from common.log import get_logger
 
 logger = get_logger()
 
 
 app_settings = AppSettings(hash_kennels="EMPTY")
+calendar_settings = CalendarConfigSettings()
 
 
 def validate_config_object(config_class, settings):
