@@ -8,7 +8,8 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 import json
-import requests
+from requests import session, Request
+from requests.exceptions import ConnectionError, ReadTimeout, JSONDecodeError as RequestsJSONDecodeError
 from typing import Union
 
 from config.api import BasicAPISettings
@@ -46,7 +47,7 @@ class ListMonkHandler:
             "Content-Type": "application/json"
         }
 
-        self.session = requests.session()
+        self.session = session()
         self.session.auth = (self.config.username, self.config.password)
         self.session.headers.update(header)
 
@@ -124,13 +125,13 @@ class ListMonkHandler:
 
         # prepare request
         this_request = self.session.prepare_request(
-                            requests.Request(req_type, request_url, params=params, json=data)
+                            Request(req_type, request_url, params=params, json=data)
                        )
 
         # issue request
         try:
             response = self.session.send(this_request, timeout=5)
-        except (ConnectionError, requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
+        except (ConnectionError, ReadTimeout) as e:
             log.error(f"Request failed, trying again: {e}")
             return
 
@@ -138,7 +139,7 @@ class ListMonkHandler:
 
         try:
             result = response.json()
-        except (json.decoder.JSONDecodeError, requests.exceptions.JSONDecodeError) as e:
+        except (json.decoder.JSONDecodeError, RequestsJSONDecodeError) as e:
             pass
 
         # token issues

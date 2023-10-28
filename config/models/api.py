@@ -8,10 +8,11 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from config.models import EnvOverridesBaseSettings
+from typing import Union
 
 
 class APIConfigSettings(EnvOverridesBaseSettings):
-    token: str = None
+    token: Union[str, None] = None
     root_path: str = "/api/v1"
 
     class Config:
