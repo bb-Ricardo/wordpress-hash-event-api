@@ -15,6 +15,7 @@ from starlette.responses import RedirectResponse
 
 from config.models.api import APIConfigSettings
 from config.models.app import AppSettings
+from config.models.calendar import CalendarConfigSettings
 from config.models.database import DBSettings
 from config.models.main import MainConfigSettings
 from listmonk.handler import ListMonkHandler, ListMonkSettings
@@ -106,6 +107,9 @@ def get_app() -> FastAPI:
 
     # update event manager fields in database
     update_event_manager_fields()
+
+    # get calendar settings
+    config.calendar_settings = config.get_config_object(config_handler, CalendarConfigSettings)
 
     # initialize listmonk
     listmonk_settings = config.get_config_object(config_handler, ListMonkSettings)

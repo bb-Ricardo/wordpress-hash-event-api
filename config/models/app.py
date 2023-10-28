@@ -23,12 +23,12 @@ maps_url_template = "https://www.openstreetmap.org/?mlat={lat}&mlon={long}#map=1
 # noinspection PyMethodParameters
 class AppSettings(EnvOverridesBaseSettings):
     hash_kennels: Union[str, List]
-    default_hash_cash: int = None
-    default_hash_cash_non_members: int = None
+    default_hash_cash: Union[int, None] = None
+    default_hash_cash_non_members: Union[int, None] = None
     default_run_type: str = "Regular Run"
-    default_currency: str = None
-    default_facebook_group_id: int = None
-    timezone_string: str = None
+    default_currency: Union[str, None] = None
+    default_facebook_group_id: Union[int, None] = None
+    timezone_string: Union[str, None] = None
     maps_url_template: AnyHttpUrl = maps_url_template
 
     # currently not implemented in WP Event manager
@@ -65,7 +65,7 @@ class AppSettings(EnvOverridesBaseSettings):
     def check_maps_url_formatting(cls, value):
 
         try:
-            value.format(lat=123, long=456)
+            str(value).format(lat=123, long=456)
         except KeyError as e:
             log.error(f"Unable to parse 'maps_url_template' formatting, KeyError: {e}. Using default value.")
             return maps_url_template

@@ -18,6 +18,8 @@ You need to have a running Wordpress site with 'WP Event Manager' Plugin install
 * phpserialize
 * mysql-connector
 * psutil
+* icalendar
+* beautifulsoup4
 
 ### WP Event Manager Plugin
 * WP Event Manager >= 3.1.21
@@ -115,6 +117,17 @@ to your server block configuration. Make sure to adjust your IP and port accordi
                 rewrite /api/v1/(.*) /$1  break;
                 proxy_pass http://127.0.0.1:8000;
                 proxy_redirect     off;
+                proxy_set_header   Host              $host;
+                proxy_set_header   X-Real-IP         $remote_addr;
+                # activate to see the actual remote IP and not just your reverse proxy
+                # attention: in Europe this has implications on your GDPR statements on your page
+                #            as you log IP addresses.
+                #proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+                #proxy_set_header   X-Forwarded-Proto $scheme;
+        }
+        # expose icalender evets
+        location /events.ics {
+                proxy_pass http://127.0.0.1:8000/runs/calendar;
                 proxy_set_header   Host              $host;
                 proxy_set_header   X-Real-IP         $remote_addr;
                 # activate to see the actual remote IP and not just your reverse proxy

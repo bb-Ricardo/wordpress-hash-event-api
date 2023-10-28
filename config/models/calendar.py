@@ -7,15 +7,13 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from pydantic import BaseModel
+from config.models import EnvOverridesBaseSettings
 
 
-class BasicAPISettings(BaseModel):
-    description: str = 'Hash Run API for WordPress Event Manager'
-    title: str = 'Kennel Runs API'
-    openapi_url: str = "/openapi.json"
-    root_path: str = "/api/v1"
-    version: str = '1.0.1'
-    debug: bool = False
+class CalendarConfigSettings(EnvOverridesBaseSettings):
+    name: str = "Hash events"
+    enable_event_alarm: bool = False
+    num_past_weeks_exposed: int = 2
 
-# EOF
+    class Config:
+        env_prefix = f"{__name__.split('.')[-1]}_"
