@@ -52,7 +52,32 @@ async def get_runs(params: HashParams = Depends(HashParams), key_valid: bool = D
                  # fastapi.tiangolo.com/advanced/additional-responses/#additional-media-types-for-the-main-response
                  responses={
                     200: {
-                        "content": {"text/calendar": {}},
+                        "content": {"text/calendar": {
+                            "example": "\n".join(
+                                    ["BEGIN:VCALENDAR",
+                                     "VERSION:2.0",
+                                      f"PRODID:-//wordpress-hash-event-api/{BasicAPISettings().version}//",
+                                      "CALSCALE:GREGORIAN",
+                                      "METHOD:PUBLISH",
+                                      f"X-WR-CALNAME:{config.calendar_settings.name}",
+                                      "X-WR-TIMEZONE:Europe/Berlin",
+                                      "BEGIN:VEVENT",
+                                      "SUMMARY:Nerd H3 Run #1234",
+                                      "DTSTART;TZID=Europe/Berlin:20231105T144500",
+                                      "DTEND;TZID=Europe/Berlin:20231105T164500",
+                                      "UID:wordpress-hash-event-api-event/676",
+                                      "DESCRIPTION:More details to follow soon!\\n\\nHash Cash: 4€\\nLocation URL:",
+                                      "  https://www.openstreetmap.org/?mlat=52.4811867&mlon=13.525649#map=17/52.4",
+                                      " 811867/13.525649",
+                                      "LAST-MODIFIED:20231026T085048Z",
+                                      "LOCATION:Karlshorst\, 10318 Berlin\, Germany",
+                                      "NAME:Nerd H3 Run #1234",
+                                      "END:VEVENT",
+                                      "ENV:VCALENDAR"
+                                     ])
+                            },
+                        },
+                        "description": "OK - Returns a list of calender events in icalendar format"
                     }
                  },
                  # Prevent FastAPI from adding "application/json" as an additional
