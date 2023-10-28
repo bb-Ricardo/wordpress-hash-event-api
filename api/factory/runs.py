@@ -9,6 +9,7 @@
 
 from datetime import datetime
 import html
+import re
 from typing import List, Any
 
 from pydantic import ValidationError
@@ -260,6 +261,14 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
                 lat=hash_data.get("geo_lat"),
                 long=hash_data.get("geo_long")
             )
+
+        # Parse coordinates out of OSM link (e.g. https://www.openstreetmap.org/#map=15/52.4512/13.4471)
+        if hash_data.get("geo_map_url") is not None:
+            pattern = r"#map=\d+/(?P<latitude>[-]?\d+\.\d+)/(?P<longitude>[-]?\d+\.\d+)"
+            match = re.search(pattern, hash_data.get("geo_map_url"))
+            if match:
+                hash_data["geo_lat"] = float(match.group("latitude"))
+                hash_data["geo_long"] = float(match.group("longitude"))
 
         # parse event data
         try:
