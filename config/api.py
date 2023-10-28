@@ -15,7 +15,7 @@ class BasicAPISettings(BaseModel):
     title: str = 'Kennel Runs API'
     openapi_url: str = "/openapi.json"
     root_path: str = "/api/v1"
-    version: str = '1.0.1'
+    version: str = '1.2.0'
     debug: bool = False
 
 # EOF
