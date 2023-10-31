@@ -254,17 +254,20 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
             hash_data["event_attributes"] = event_attributes
 
         # handle geo_map_url
-        if hash_data.get("geo_map_url") is None and \
-                hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
+        if hash_data.get("geo_map_url") is None:
+            if hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
 
-            hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
-                lat=hash_data.get("geo_lat"),
-                long=hash_data.get("geo_long")
-            )
+                hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
+                    lat=hash_data.get("geo_lat"),
+                    long=hash_data.get("geo_long")
+                )
 
         # Parse coordinates out of OSM link (e.g. https://www.openstreetmap.org/#map=15/52.4512/13.4471)
-        if hash_data.get("geo_map_url") is not None:
+        else:
             pattern = r"#map=\d+/(?P<latitude>[-]?\d+\.\d+)/(?P<longitude>[-]?\d+\.\d+)"
+            if "google" in hash_data.get("geo_map_url"):
+                pattern = r".*\!3d(?P<latitude>[-]?\d+\.\d+)\!4d(?P<longitude>[-]?\d+\.\d+).*"
+
             match = re.search(pattern, hash_data.get("geo_map_url"))
             if match:
                 hash_data["geo_lat"] = float(match.group("latitude"))
