@@ -140,9 +140,9 @@ async def get_runs_as_icalendar(params: HashParams = Depends(HashParams), key_va
         event.add('last-modified', run.last_update)
         event.add('location', vText(run.geo_location_name))
         event.add('url', run.event_url, {"VALUE": "URI"})
-        event.add('geo', vGeo([run.geo_lat, run.geo_long]))
 
         if run.geo_lat and run.geo_long:
+            event.add('geo', vGeo([run.geo_lat, run.geo_long]))
             event.add('X-APPLE-STRUCTURED-LOCATION', f'geo:{run.geo_lat},{run.geo_long}',
                       {"X-TITLE": vText(run.geo_location_name)})
 
