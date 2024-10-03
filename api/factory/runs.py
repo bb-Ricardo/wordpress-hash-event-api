@@ -42,7 +42,11 @@ def get_event_manager_field_data(event_manager_fields: dict, field_name: str, fi
         if field_data.get("type") in ["select", "radio"]:
             return field_data.get("options").get(field_value)
         elif field_data.get("type") == "file":
-            return php_deserialize(field_value).get(0)
+            field_value_content = php_deserialize(field_value)
+            if field_value_content is not None:
+                return php_deserialize(field_value).get(0)
+            else:
+                return field_value
         elif field_data.get("type") == "multiselect":
             ret_list = list()
             for field in php_deserialize(field_value).values():
