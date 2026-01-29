@@ -7,6 +7,7 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from pydantic_settings import SettingsConfigDict
 from config.models import EnvOverridesBaseSettings
 
 
@@ -15,6 +16,6 @@ class CalendarConfigSettings(EnvOverridesBaseSettings):
     enable_event_alarm: bool = False
     num_past_weeks_exposed: int = 2
 
-    model_config = {
-        "env_prefix": f"{__name__.split('.')[-1]}_"
-    }
+    model_config = SettingsConfigDict(
+        env_prefix=f"{__name__.split('.')[-1]}_",
+    )

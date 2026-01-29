@@ -62,7 +62,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
 
     def compare_attributes(value_a, value_b):
 
-        if type(value_a) == type(value_b):
+        if type(value_a) is type(value_b):
             if "__gt" in key and value_b > value_a:
                 return True
             elif "__lt" in key and value_b < value_a:
@@ -73,7 +73,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
         return False
 
     matches = list()
-    for key, value in params.dict().items():
+    for key, value in params.to_dict().items():
 
         # skip unsupported keys like: __pydantic_initialised__
         if key.startswith("__"):
@@ -87,15 +87,15 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
             continue
 
         event_value = getattr(hash_event, key, None)
-        if type(value) == type(event_value) == str and value.lower() in event_value.lower():
+        if type(value) is type(event_value) is str and value.lower() in event_value.lower():
             matches.append(True)
             continue
 
-        if type(value) == type(event_value) == bool and value == event_value:
+        if type(value) is type(event_value) is bool and value == event_value:
             matches.append(True)
             continue
 
-        if type(value) == HashScope and value == event_value:
+        if type(value) is HashScope and value == event_value:
             matches.append(True)
             continue
 

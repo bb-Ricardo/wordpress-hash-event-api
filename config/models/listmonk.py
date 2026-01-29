@@ -7,6 +7,7 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from pydantic_settings import SettingsConfigDict
 from config.models import EnvOverridesBaseSettings
 from pydantic import field_validator
 
@@ -21,9 +22,9 @@ class ListMonkSettings(EnvOverridesBaseSettings):
     body_template_id: int
     list_ids: str
 
-    model_config = {
-        "env_prefix": f"{__name__.split('.')[-1]}_"
-    }
+    model_config = SettingsConfigDict(
+        env_prefix=f"{__name__.split('.')[-1]}_",
+    )
 
     @field_validator("list_ids")
     @classmethod

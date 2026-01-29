@@ -90,7 +90,7 @@ def get_app() -> FastAPI:
 
     log.info("Database connection successfully started")
 
-    # read app settings from config and try to find settings in wordpress db if not defined in config
+    # read app settings from config and try to find settings in WordPress db if not defined in config
     app_settings = config.get_config_object(config_handler, AppSettings)
 
     # try to find further settings in DB if undefined
@@ -129,7 +129,7 @@ def get_app() -> FastAPI:
 
     # close DB connection on shutdown
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(_: FastAPI):
         yield
         if conn is not None:
             conn.close()

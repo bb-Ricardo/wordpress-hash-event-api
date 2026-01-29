@@ -8,7 +8,7 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from fastapi import HTTPException
-from starlette.status import HTTP_403_FORBIDDEN, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_403_FORBIDDEN, HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class RequestValidationError(HTTPException):
@@ -16,7 +16,7 @@ class RequestValidationError(HTTPException):
         return Validation Error
     """
     def __init__(self, loc, msg, typ):
-        super().__init__(HTTP_422_UNPROCESSABLE_ENTITY, [{'loc': loc, 'msg': msg, 'type': typ}])
+        super().__init__(HTTP_422_UNPROCESSABLE_CONTENT, [{'loc': loc, 'msg': msg, 'type': typ}])
 
 
 class APITokenValidationFailed(HTTPException):

@@ -8,6 +8,7 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from typing import Union, List
+from pydantic_settings import SettingsConfigDict
 from config.models import EnvOverridesBaseSettings
 from pydantic import field_validator, AnyHttpUrl
 import pytz
@@ -34,9 +35,9 @@ class AppSettings(EnvOverridesBaseSettings):
     # default_kennel: str = None
     # default_run_attributes: Union[str, List] = None
 
-    model_config = {
-        "env_prefix": f"{__name__.split('.')[-1]}_"
-    }
+    model_config = SettingsConfigDict(
+        env_prefix=f"{__name__.split('.')[-1]}_",
+    )
 
     def __init__(self, *args, **kwargs):
 
