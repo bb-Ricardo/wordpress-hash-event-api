@@ -7,7 +7,7 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 
@@ -38,6 +38,7 @@ class ListmonkReturnData(BaseModel):
     subject: str
     from_email: str
     body: str
+    body_source: Optional[str]
     altbody: Any
     send_at: Any
     status: str
@@ -47,7 +48,7 @@ class ListmonkReturnData(BaseModel):
     template_id: int
     messenger: str
     archive: bool
-    archive_template_id: int
+    archive_template_id: Optional[int]
     archive_meta: Dict[str, Any]
 
 
