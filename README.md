@@ -214,10 +214,10 @@ function tutsplus_add_script_wp_head() {
 					}
 				};
 
-			    xhttp.open("POST", "/api/v1/send-newsletter/<?php echo get_the_ID(); ?>" , true);
+			  xhttp.open("POST", "/api/v1/send-newsletter/<?php echo get_the_ID(); ?>" , true);
 				xhttp.setRequestHeader('Content-type', 'application/json')
 
-			    xhttp.send(JSON.stringify(params));
+			  xhttp.send(JSON.stringify(params));
 				xhttp.onload = function() {
                     // Do whatever with response
                         alert("Mailing List request status: " + xhttp.responseText)
