@@ -15,5 +15,6 @@ class APIConfigSettings(EnvOverridesBaseSettings):
     token: Union[str, None] = None
     root_path: str = "/api/v1"
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = {
+        "env_prefix": f"{__name__.split('.')[-1]}_"
+    }

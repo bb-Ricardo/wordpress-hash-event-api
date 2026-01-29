@@ -70,7 +70,7 @@ async def get_runs(params: HashParams = Depends(HashParams), key_valid: bool = D
                                       "  https://www.openstreetmap.org/?mlat=52.4811867&mlon=13.525649#map=17/52.4",
                                       " 811867/13.525649",
                                       "LAST-MODIFIED:20231026T085048Z",
-                                      "LOCATION:Karlshorst\, 10318 Berlin\, Germany",
+                                      "LOCATION:Karlshorst\\, 10318 Berlin\\, Germany",
                                       "NAME:Nerd H3 Run #1234",
                                       "END:VEVENT",
                                       "ENV:VCALENDAR"

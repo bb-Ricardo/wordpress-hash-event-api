@@ -17,5 +17,6 @@ class DBSettings(EnvOverridesBaseSettings):
     host: str
     port: int = 3306
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = {
+        "env_prefix": f"{__name__.split('.')[-1]}_"
+    }

@@ -14,7 +14,8 @@ from config.log import default_log_level
 
 
 class MainConfigSettings(EnvOverridesBaseSettings):
-    log_level: str = Field(default_log_level, env={"log_level", "main_log_level"})
+    log_level: str = Field(default=default_log_level, json_schema_extra={"env": ("log_level", "main_log_level")})
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = {
+        "env_prefix": f"{__name__.split('.')[-1]}_"
+    }

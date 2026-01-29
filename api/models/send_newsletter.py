@@ -7,13 +7,11 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from pydantic.dataclasses import dataclass
 from typing import Any, Dict, List
 from pydantic import BaseModel
 
 
-@dataclass
-class SendNewsletterParams:
+class SendNewsletterParams(BaseModel):
     user: int
     token: str
 

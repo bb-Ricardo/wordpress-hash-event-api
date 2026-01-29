@@ -7,6 +7,8 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from packaging.version import Version
+
 from common.misc import php_deserialize, php_serialize, format_slug
 from source.database import get_db_handler
 from common.log import get_logger
@@ -164,20 +166,8 @@ def check_event_manager_version():
         exit(1)
     else:
         log.info(f"Installed Wordpress Event Manager version: {installed_event_manager_version}")
-        version_supported = False
-        # try to compare versions
-        # noinspection PyBroadException
-        try:
-            version_split = installed_event_manager_version.split(".")
-            supported_version_split = supported_version.split(".")
-            if int(version_split[0]) == int(supported_version_split[0]) and \
-                    int(version_split[1]) >= int(supported_version_split[1]) and \
-                    int(version_split[2]) >= int(supported_version_split[2]):
-                version_supported = True
-        except Exception:
-            pass
 
-        if version_supported is False:
+        if Version(installed_event_manager_version) <= Version(supported_version):
             log.error(f"Wordpress Event Manager version '{installed_event_manager_version}' unsupported. "
                       f"Minimal version needed '{supported_version}'. Please update plugin.")
             exit(1)

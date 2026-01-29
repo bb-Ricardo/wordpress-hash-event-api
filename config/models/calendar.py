@@ -15,5 +15,6 @@ class CalendarConfigSettings(EnvOverridesBaseSettings):
     enable_event_alarm: bool = False
     num_past_weeks_exposed: int = 2
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = {
+        "env_prefix": f"{__name__.split('.')[-1]}_"
+    }

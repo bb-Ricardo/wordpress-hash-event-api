@@ -9,7 +9,7 @@ by [Harrier Central](https://www.harriercentral.com)
 You need to have a running Wordpress site with 'WP Event Manager' Plugin installed.
 
 ### Software
-* python >= 3.6
+* python >= 3.13
 * starlette
 * fastapi
 * pydantic
@@ -20,6 +20,7 @@ You need to have a running Wordpress site with 'WP Event Manager' Plugin install
 * psutil
 * icalendar
 * beautifulsoup4
+* packaging
 
 ### WP Event Manager Plugin
 * WP Event Manager >= 3.1.21
@@ -227,9 +228,9 @@ function tutsplus_add_script_wp_head() {
     <?php
 }
 ```
-With Listmonk running on the same hos, sending an event via Mailing list is just a button press away.
+With Listmonk running on the same host, sending an event via Mailing list is just a button press away.
 
 ## License
->You can check out the full license [here](LICENSE.txt)
+> You can check out the full license [here](LICENSE.txt)
 
 This project is licensed under the terms of the **MIT** license.

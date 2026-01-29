@@ -99,8 +99,13 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
             matches.append(True)
             continue
 
-        if key.startswith("start_date") and compare_attributes(value, getattr(hash_event, "start_date")):
-            matches.append(True)
+        if key.startswith("start_date"):
+            # make value timezone aware
+            if isinstance(value, datetime) and value.tzinfo is None:
+                value = pytz.timezone(config.app_settings.timezone_string).localize(value)
+
+            if compare_attributes(value, getattr(hash_event, "start_date")):
+                matches.append(True)
             continue
 
         if key.startswith("run_number") and compare_attributes(value, getattr(hash_event, "run_number")):
@@ -257,7 +262,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         if hash_data.get("geo_map_url") is None:
             if hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
 
-                hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
+                hash_data["geo_map_url"] = str(config.app_settings.maps_url_template).format(
                     lat=hash_data.get("geo_lat"),
                     long=hash_data.get("geo_long")
                 )
@@ -291,14 +296,14 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         if event_time_zone is not None:
 
             if isinstance(run.start_date, datetime):
-                run.start_date = event_time_zone.localize(run.start_date)
+                run.start_date = pytz.timezone(event_time_zone).localize(run.start_date)
 
             if isinstance(run.end_date, datetime):
-                run.end_date = event_time_zone.localize(run.end_date)
+                run.end_date = pytz.timezone(event_time_zone).localize(run.end_date)
 
         if config.app_settings.timezone_string is not None:
             if isinstance(run.last_update, datetime):
-                run.last_update = config.app_settings.timezone_string.localize(run.last_update)
+                run.last_update = pytz.timezone(config.app_settings.timezone_string).localize(run.last_update)
 
         # apply filters
         if passes_filter_params(params, run) is False:
@@ -312,4 +317,5 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
     log.debug(f"returning '{len(return_list)}' run/event results")
 
     return return_list
+
 # EOF

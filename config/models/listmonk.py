@@ -8,10 +8,9 @@
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
 from config.models import EnvOverridesBaseSettings
-from pydantic import validator
+from pydantic import field_validator
 
 
-# noinspection PyMethodParameters
 class ListMonkSettings(EnvOverridesBaseSettings):
     enabled: bool = False
     send_campaign: bool = False
@@ -22,10 +21,12 @@ class ListMonkSettings(EnvOverridesBaseSettings):
     body_template_id: int
     list_ids: str
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = {
+        "env_prefix": f"{__name__.split('.')[-1]}_"
+    }
 
-    @validator("list_ids")
+    @field_validator("list_ids")
+    @classmethod
     def split_list_ids(cls, value):
         if isinstance(value, str):
             try:
