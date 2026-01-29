@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -7,13 +7,11 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from pydantic.dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 
-@dataclass
-class SendNewsletterParams:
+class SendNewsletterParams(BaseModel):
     user: int
     token: str
 
@@ -40,6 +38,7 @@ class ListmonkReturnData(BaseModel):
     subject: str
     from_email: str
     body: str
+    body_source: Optional[str]
     altbody: Any
     send_at: Any
     status: str
@@ -49,7 +48,7 @@ class ListmonkReturnData(BaseModel):
     template_id: int
     messenger: str
     archive: bool
-    archive_template_id: int
+    archive_template_id: Optional[int]
     archive_meta: Dict[str, Any]
 
 

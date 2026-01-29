@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -12,8 +12,7 @@ from datetime import datetime
 from pytz import utc
 from enum import Enum
 
-from pydantic import BaseModel, AnyHttpUrl, Field, validator, root_validator, ValidationError
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, AnyHttpUrl, Field, model_validator, field_validator, ValidationError, ConfigDict
 from fastapi import Query
 from fastapi.exceptions import RequestValidationError
 
@@ -36,17 +35,16 @@ HashScope.__doc__ = "scope of the event"
 hash_attribute_list = ", ".join([e.value for e in HashAttributes])
 
 
-@dataclass
-class HashParams:
+class HashParams(BaseModel):
     """
         defines params to filter for event
         If more than one filter is defined, all filters have to match in oder to return an event
     """
 
     id: Optional[int] = None
-    last_update: Optional[int] = Query(None, description="set as unix timestamp")
-    last_update__gt: Optional[int] = Query(None, description="set as unix timestamp")
-    last_update__lt: Optional[int] = Query(None, description="set as unix timestamp")
+    last_update: Optional[int | datetime] = Query(None, description="set as unix timestamp")
+    last_update__gt: Optional[int | datetime] = Query(None, description="set as unix timestamp")
+    last_update__lt: Optional[int | datetime] = Query(None, description="set as unix timestamp")
     event_name: Optional[str] = None
     kennel_name: Optional[str] = None
     event_type: Optional[str] = None
@@ -54,25 +52,25 @@ class HashParams:
                                             description=f"comma separated list of event attributes - "
                                                         f"available values: {hash_attribute_list}")
     event_geographic_scope: Optional[HashScope] = None
-    start_date: Optional[int] = Query(None, description="set as unix timestamp")
-    start_date__gt: Optional[int] = Query(None, description="set as unix timestamp")
-    start_date__lt: Optional[int] = Query(None, description="set as unix timestamp")
+    start_date: Optional[int | datetime] = Query(None, description="set as unix timestamp")
+    start_date__gt: Optional[int | datetime] = Query(None, description="set as unix timestamp")
+    start_date__lt: Optional[int | datetime] = Query(None, description="set as unix timestamp")
     deleted: Optional[bool] = None
     run_number: Optional[int] = None
-    run_number__gt: Optional[int] = None
-    run_number__lt: Optional[int] = None
+    run_number__gt: Optional[int] = Query(None, description="run number greater than")
+    run_number__lt: Optional[int] = Query(None, description="run number less than")
     run_is_counted: Optional[bool] = None
     hares: Optional[str] = None
     location_name: Optional[str] = None
     limit: Optional[int] = None
 
-    def dict(self):
+    def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k != "__initialised__"}
 
-    # noinspection PyMethodParameters
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def check_everything(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if set(values.values()) == {None}:
+        if isinstance(values, dict) and set(values.values()) == {None}:
             return values
 
         # check mutual exclusive params
@@ -125,11 +123,16 @@ class HashParams:
         return values
 
 
-# noinspection PyMethodParameters
 class Hash(BaseModel):
     """
         a Hash run/event object
     """
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda x: x.isoformat()
+        }
+    )
+
     id: int
     last_update: datetime = Field(description="in ISO format")
 
@@ -166,27 +169,20 @@ class Hash(BaseModel):
     extras_description: Optional[str] = None
     event_hidden: bool = False
 
-    class Config:
-        json_encoders = {
-            # custom output conversion for datetime
-            datetime: lambda x: x.isoformat()
-        }
-
-    @validator("*")
+    @field_validator("*", mode="before")
+    @classmethod
     def set_empty_strings_to_none(cls, value):
         if isinstance(value, str) and len(value.strip()) == 0:
             return None
         return value
 
-    @validator("geo_map_url", always=True, pre=True)
+    @field_validator("geo_map_url", mode="before")
+    @classmethod
     def loose_type_geo_map_url(cls, value):
-        class SelfValidate(BaseModel):
-            url: AnyHttpUrl
-
         if value is None:
             return
         try:
-            SelfValidate(url=value)
+            AnyHttpUrl(value)
         except ValidationError as e:
             log.warning(f"Issues while validating 'geo_map_url' value '{value}': {e.errors()[0].get('msg')}")
             return

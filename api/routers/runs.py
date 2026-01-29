@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -70,7 +70,7 @@ async def get_runs(params: HashParams = Depends(HashParams), key_valid: bool = D
                                       "  https://www.openstreetmap.org/?mlat=52.4811867&mlon=13.525649#map=17/52.4",
                                       " 811867/13.525649",
                                       "LAST-MODIFIED:20231026T085048Z",
-                                      "LOCATION:Karlshorst\, 10318 Berlin\, Germany",
+                                      "LOCATION:Karlshorst\\, 10318 Berlin\\, Germany",
                                       "NAME:Nerd H3 Run #1234",
                                       "END:VEVENT",
                                       "ENV:VCALENDAR"
@@ -142,7 +142,7 @@ async def get_runs_as_icalendar(params: HashParams = Depends(HashParams), key_va
         event.add('url', run.event_url, {"VALUE": "URI"})
 
         if run.geo_lat and run.geo_long:
-            event.add('geo', vGeo([run.geo_lat, run.geo_long]))
+            event.add('geo', vGeo((run.geo_lat, run.geo_long)))
             event.add('X-APPLE-STRUCTURED-LOCATION', f'geo:{run.geo_lat},{run.geo_long}',
                       {"X-TITLE": vText(run.geo_location_name)})
 

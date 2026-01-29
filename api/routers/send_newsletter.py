@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -49,7 +49,7 @@ async def get_run(post_id: int, params: SendNewsletterParams):
             session_tokens = item.get("meta_value")
 
     if session_tokens is None:
-        log.debug(f"No session_tokens metadata found in wordpress DB for user id {params.user}")
+        log.debug(f"No session_tokens metadata found in WordPress DB for user id {params.user}")
         raise CredentialsInvalid
 
     # use hashed session token to find session in database

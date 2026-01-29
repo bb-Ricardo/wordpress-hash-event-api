@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -23,11 +23,11 @@ app_settings = AppSettings(hash_kennels="EMPTY")
 calendar_settings = CalendarConfigSettings()
 
 
-def validate_config_object(config_class, settings):
+def validate_config_object(config_class, settings: dict):
 
-    settings_object = None
     try:
-        settings_object = config_class(**settings)
+        settings_object = config_class(**{k: v for k, v in settings.items() if v is not None})
+
     except ValidationError as e:
         e = str(e).replace('\n', ": ")
         logger.error(f"Unable to parse config (also check defined env vars): {e}")
@@ -164,7 +164,7 @@ def get_config(config_handler=None, section=None, valid_settings=None, deprecate
     if valid_settings is None:
         logger.error("No valid settings passed to config parser!")
 
-    # read specified section section
+    # read specified section
     if section is None:
         return config_dict
 

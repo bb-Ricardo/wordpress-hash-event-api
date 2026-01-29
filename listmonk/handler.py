@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -96,17 +96,17 @@ class ListMonkHandler:
         Parameters
         ----------
         endpoint: str
-            ListmonkObject endpoint below "/api/
+            ListmonkObject endpoint below "/api/"
         req_type: str
             GET, PATCH, PUT, DELETE
         data: dict
-            data which shall be send to Listmonk
+            data which shall be sent to Listmonk
         params: dict
-            dict of URL params which should be passed to Listmonk
+            URL params which should be passed to Listmonk
 
         Returns
         -------
-        (dict, bool, None): of returned Listmonk data. If object was requested to be deleted and it was
+        (dict, bool, None): of returned Listmonk data. If object was requested to be deleted, it was
                             successful then True will be returned. None if request failed or was empty
         """
 
@@ -139,7 +139,7 @@ class ListMonkHandler:
 
         try:
             result = response.json()
-        except (json.decoder.JSONDecodeError, RequestsJSONDecodeError) as e:
+        except (json.decoder.JSONDecodeError, RequestsJSONDecodeError):
             pass
 
         # token issues

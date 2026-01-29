@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -7,11 +7,11 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
+from pydantic_settings import SettingsConfigDict
 from config.models import EnvOverridesBaseSettings
-from pydantic import validator
+from pydantic import field_validator
 
 
-# noinspection PyMethodParameters
 class ListMonkSettings(EnvOverridesBaseSettings):
     enabled: bool = False
     send_campaign: bool = False
@@ -22,10 +22,12 @@ class ListMonkSettings(EnvOverridesBaseSettings):
     body_template_id: int
     list_ids: str
 
-    class Config:
-        env_prefix = f"{__name__.split('.')[-1]}_"
+    model_config = SettingsConfigDict(
+        env_prefix=f"{__name__.split('.')[-1]}_",
+    )
 
-    @validator("list_ids")
+    @field_validator("list_ids")
+    @classmethod
     def split_list_ids(cls, value):
         if isinstance(value, str):
             try:

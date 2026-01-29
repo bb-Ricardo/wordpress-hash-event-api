@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -12,6 +12,7 @@ import os
 
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
+from contextlib import asynccontextmanager
 
 from config.models.api import APIConfigSettings
 from config.models.app import AppSettings
@@ -89,7 +90,7 @@ def get_app() -> FastAPI:
 
     log.info("Database connection successfully started")
 
-    # read app settings from config and try to find settings in wordpress db if not defined in config
+    # read app settings from config and try to find settings in WordPress db if not defined in config
     app_settings = config.get_config_object(config_handler, AppSettings)
 
     # try to find further settings in DB if undefined
@@ -103,7 +104,7 @@ def get_app() -> FastAPI:
         setattr(app_settings, key, value)
 
     # parse settings
-    config.app_settings = config.validate_config_object(AppSettings, app_settings.dict())
+    config.app_settings = config.validate_config_object(AppSettings, app_settings.model_dump())
 
     # update event manager fields in database
     update_event_manager_fields()
@@ -126,14 +127,15 @@ def get_app() -> FastAPI:
     # set api key if defined
     set_api_key(api_settings.token)
 
-    # create FastAPI instance
-    server = FastAPI(**basic_api_settings.dict())
-
     # close DB connection on shutdown
-    @server.on_event("shutdown")
-    async def shutdown():
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        yield
         if conn is not None:
             conn.close()
+
+    # create FastAPI instance
+    server = FastAPI(**{**basic_api_settings.model_dump(), "lifespan": lifespan})
 
     # disable API authorization if no token is defined
     if api_settings.token is None:

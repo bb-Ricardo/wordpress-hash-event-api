@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2022 Ricardo Bartels. All rights reserved.
+#  Copyright (c) 2022 - 2026 Ricardo Bartels. All rights reserved.
 #
 #  wordpress-hash-event-api
 #
@@ -66,7 +66,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
 
     def compare_attributes(value_a, value_b):
 
-        if type(value_a) == type(value_b):
+        if type(value_a) is type(value_b):
             if "__gt" in key and value_b > value_a:
                 return True
             elif "__lt" in key and value_b < value_a:
@@ -77,7 +77,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
         return False
 
     matches = list()
-    for key, value in params.dict().items():
+    for key, value in params.to_dict().items():
 
         # skip unsupported keys like: __pydantic_initialised__
         if key.startswith("__"):
@@ -91,20 +91,25 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
             continue
 
         event_value = getattr(hash_event, key, None)
-        if type(value) == type(event_value) == str and value.lower() in event_value.lower():
+        if type(value) is type(event_value) is str and value.lower() in event_value.lower():
             matches.append(True)
             continue
 
-        if type(value) == type(event_value) == bool and value == event_value:
+        if type(value) is type(event_value) is bool and value == event_value:
             matches.append(True)
             continue
 
-        if type(value) == HashScope and value == event_value:
+        if type(value) is HashScope and value == event_value:
             matches.append(True)
             continue
 
-        if key.startswith("start_date") and compare_attributes(value, getattr(hash_event, "start_date")):
-            matches.append(True)
+        if key.startswith("start_date"):
+            # make value timezone aware
+            if isinstance(value, datetime) and value.tzinfo is None:
+                value = pytz.timezone(config.app_settings.timezone_string).localize(value)
+
+            if compare_attributes(value, getattr(hash_event, "start_date")):
+                matches.append(True)
             continue
 
         if key.startswith("run_number") and compare_attributes(value, getattr(hash_event, "run_number")):
@@ -261,7 +266,7 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         if hash_data.get("geo_map_url") is None:
             if hash_data.get("geo_lat") is not None and hash_data.get("geo_long") is not None:
 
-                hash_data["geo_map_url"] = config.app_settings.maps_url_template.format(
+                hash_data["geo_map_url"] = str(config.app_settings.maps_url_template).format(
                     lat=hash_data.get("geo_lat"),
                     long=hash_data.get("geo_long")
                 )
@@ -295,14 +300,14 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
         if event_time_zone is not None:
 
             if isinstance(run.start_date, datetime):
-                run.start_date = event_time_zone.localize(run.start_date)
+                run.start_date = pytz.timezone(event_time_zone).localize(run.start_date)
 
             if isinstance(run.end_date, datetime):
-                run.end_date = event_time_zone.localize(run.end_date)
+                run.end_date = pytz.timezone(event_time_zone).localize(run.end_date)
 
         if config.app_settings.timezone_string is not None:
             if isinstance(run.last_update, datetime):
-                run.last_update = config.app_settings.timezone_string.localize(run.last_update)
+                run.last_update = pytz.timezone(config.app_settings.timezone_string).localize(run.last_update)
 
         # apply filters
         if passes_filter_params(params, run) is False:
@@ -316,4 +321,5 @@ def get_hash_runs(params: HashParams) -> List[Hash]:
     log.debug(f"returning '{len(return_list)}' run/event results")
 
     return return_list
+
 # EOF
