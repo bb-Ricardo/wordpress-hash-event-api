@@ -77,7 +77,7 @@ def passes_filter_params(params: HashParams, hash_event: Hash) -> bool:
         return False
 
     matches = list()
-    for key, value in params.to_dict().items():
+    for key, value in params.model_dump().items():
 
         # skip unsupported keys like: __pydantic_initialised__
         if key.startswith("__"):

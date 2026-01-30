@@ -43,7 +43,7 @@
 
 # Any additional arguments to be passed to uvicorn command.
 # More options here: https://www.uvicorn.org/settings/
-#extra_args=""
+extra_args="--log-config ${app_path}/config/log-config.json --log-level info --proxy-headers"
 
 # Specify service dependencies. You can use the same directives as in the
 # depend() function, but as variables prefixed by "rc_" (e.g. rc_need, rc_use).

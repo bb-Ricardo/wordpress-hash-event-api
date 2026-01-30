@@ -7,8 +7,11 @@
 #  For a copy, see file LICENSE.txt included in this
 #  repository or visit: <https://opensource.org/licenses/MIT>.
 
-from logging.config import dictConfig as logDictConfig
+import uvicorn
 import os
+import logging
+import json
+import psutil
 
 from fastapi import FastAPI
 from starlette.responses import RedirectResponse
@@ -18,47 +21,33 @@ from config.models.api import APIConfigSettings
 from config.models.app import AppSettings
 from config.models.calendar import CalendarConfigSettings
 from config.models.database import DBSettings
-from config.models.main import MainConfigSettings
 from listmonk.handler import ListMonkHandler, ListMonkSettings
-from config.log import default_log_level, request_logger_config
 from config.api import BasicAPISettings
 import config
 from api.security import api_key_valid, set_api_key
 from api.routers import runs, send_newsletter
 from source.database import setup_db_handler
 from source.manage_event_fields import update_event_manager_fields
-from common.log import setup_logging
+from common.log import get_logger
 
-settings_file = "config.ini"
-log = None
+config_file_name = "config.ini"
+logging_config_file_name = "log-config.json"
+default_log_level = "INFO"
 
 
 def get_app() -> FastAPI:
 
-    global log
-
     basic_api_settings = BasicAPISettings()
 
     # get config file path
-    config_file = config.get_config_file(settings_file)
+    config_file = config.get_config_file(config_file_name)
 
-    log_level = default_log_level
+    log = get_logger()
 
-    # get config handler
     config_handler = None
     if os.path.exists(config_file):
 
         config_handler = config.open_config_file(config_file)
-    
-        # config overwrites default
-        if config_handler is not None:
-            log_level = config_handler.get(MainConfigSettings.config_section_name(), "log_level", fallback=log_level)
-
-    # env overwrites config value
-    log_level = MainConfigSettings(log_level=log_level).log_level
-
-    # setup logging
-    log = setup_logging(log_level)
 
     log.info(f"Starting {basic_api_settings.description} v{basic_api_settings.version}")
 
@@ -67,12 +56,8 @@ def get_app() -> FastAPI:
     elif config_handler is None:
         log.warning(f"Problems while reading config file. Reading config from env vars")
 
-    if log_level == "DEBUG":
+    if log.getEffectiveLevel() <= logging.DEBUG:
         basic_api_settings.debug = True
-
-    # configure request logger
-    request_logger_config["loggers"]["uvicorn.access"]["level"] = log_level
-    logDictConfig(request_logger_config)
 
     # parse settings for db and initialize db connection
     db_settings = config.get_config_object(config_handler, DBSettings)
@@ -162,5 +147,46 @@ def get_app() -> FastAPI:
 
 
 app = get_app()
+
+
+def run():
+
+    reload = False
+    logging_config_location = os.path.sep.join([os.path.dirname(__file__), "config", logging_config_file_name])
+
+    try:
+        with open(logging_config_location, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"ERROR: unable to open logging configuration: {e}")
+        exit(1)
+
+    # read log level from env
+    log_level_from_env = os.getenv("LOG_LEVEL", default_log_level).lower()
+    if log_level_from_env in ("debug", "trace"):
+        reload = True
+
+    if len(log_level_from_env) == 0:
+        log_level_from_env = default_log_level.lower()
+
+    # if process was initiated by systemd then remove the timestamp from log output
+    try:
+        if psutil.Process(psutil.Process(os.getpid()).ppid()).name() == "systemd":
+            data["formatters"]["default"]["fmt"] = data["formatters"]["default"]["fmt"].replace('%(asctime)s - ', "")
+            data["formatters"]["access"]["fmt"] = data["formatters"]["access"]["fmt"].replace('%(asctime)s - ', "")
+    except Exception as e:
+        print(f"unable to determine parent process name: {e}")
+
+    uvicorn.run("main:app",
+                host="0.0.0.0",
+                port=8000,
+                reload=reload,
+                log_level=log_level_from_env,
+                log_config=data,
+                proxy_headers=True)
+
+
+if __name__ == '__main__':
+    run()
 
 # EOF

@@ -64,9 +64,6 @@ class HashParams(BaseModel):
     location_name: Optional[str] = None
     limit: Optional[int] = None
 
-    def to_dict(self):
-        return {k: v for k, v in self.__dict__.items() if k != "__initialised__"}
-
     @model_validator(mode="before")
     @classmethod
     def check_everything(cls, values: Dict[str, Any]) -> Dict[str, Any]:

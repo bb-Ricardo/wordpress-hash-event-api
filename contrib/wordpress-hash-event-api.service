@@ -5,12 +5,10 @@ After=network-online.target
 
 [Service]
 Type=simple
-User=nobody
-Group=nogroup
+DynamicUser=yes
+Environment="LOG_LEVEL=INFO"
 WorkingDirectory=/opt/wordpress-hash-event-api
-ExecStart=/opt/wordpress-hash-event-api/.venv/bin/uvicorn main:app --port 8001 --proxy-headers
-StandardOutput=syslog
-StandardError=syslog
+ExecStart=/opt/wordpress-hash-event-api/.venv/bin/python /opt/wordpress-hash-event-api/main.py
 SyslogIdentifier=wordpress-hash-event-api
 RemainAfterExit=no
 Restart=always
