@@ -47,7 +47,8 @@ class DBConnection:
                 password=self.password,
                 database=self.database,
                 port=self.port,
-                connection_timeout=self.connection_timeout
+                connection_timeout=self.connection_timeout,
+                charset='utf8mb4'
             )
         except mysql.connector.Error as e:
             log.error(f"DB error occurred: {e}")
