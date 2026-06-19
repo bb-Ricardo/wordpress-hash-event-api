@@ -14,6 +14,7 @@ from pydantic import BaseModel
 class SendNewsletterParams(BaseModel):
     user: int
     token: str
+    send_campaign: bool
 
 
 class MailingListModel(BaseModel):

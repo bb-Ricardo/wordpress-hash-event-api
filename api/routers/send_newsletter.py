@@ -146,7 +146,7 @@ async def get_run(post_id: int, params: SendNewsletterParams):
     campaign_id = grab(campaign_result, "data.id")
 
     # send campaign
-    if listmonk_handler.config.send_campaign is True:
+    if listmonk_handler.config.send_campaign is True or params.send_campaign is True:
         campaign_result = listmonk_handler.set_campaign_status(campaign_id, "running")
 
         if campaign_result is None:
